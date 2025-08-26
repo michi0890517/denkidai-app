@@ -1,71 +1,206 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>電気代節約アプリ v1</title>
+  <meta charset="UTF-8" />
+  <title>電気代節約アプリ v1.1（プリセット対応）</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { font-family: sans-serif; background:#0b0f14; color:#e8f0ff; padding:20px; }
-    h1 { color:#5ad1ff; }
-    input, button { padding:8px; margin:5px; }
-    table { border-collapse: collapse; margin-top:15px; width:100%; }
-    th, td { border:1px solid #444; padding:8px; text-align:center; }
-    th { background:#111824; }
+    :root{--bg:#0b0f14;--panel:#111824;--text:#e8f0ff;--muted:#9fb3c8;--accent:#5ad1ff;--border:#233043}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;background:#0b0f14;color:#e8f0ff;margin:0}
+    header{padding:18px;border-bottom:1px solid var(--border);background:#0e1520}
+    h1{margin:0;color:var(--accent);font-size:20px}
+    main{padding:18px;max-width:980px;margin:0 auto}
+    .row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+    input,select,button{background:#0e1520;color:#e8f0ff;border:1px solid var(--border);border-radius:8px;padding:10px}
+    input,select{min-width:150px}
+    button{cursor:pointer}
+    .primary{background:linear-gradient(90deg,#5ad1ff,#7cffc2);color:#001018;border:none;font-weight:700}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{border-bottom:1px solid var(--border);padding:10px;text-align:center}
+    th{color:var(--muted);background:#111824}
+    .muted{color:var(--muted)}
   </style>
 </head>
 <body>
-  <h1>⚡ 電気代節約アプリ v1</h1>
-  <p>家電の消費電力・使用時間を入力して月の電気代を計算します。</p>
+  <header>
+    <h1>⚡ 電気代節約アプリ v1.1（プリセット / マイ家電対応）</h1>
+    <div class="muted" style="font-size:12px">プリセットは目安値。選択後に自由に上書きOK。自分の機器は「マイ家電に保存」で次回から選べる。</div>
+  </header>
 
-  <div>
-    家電名: <input id="name" placeholder="例: エアコン">
-    消費電力(W): <input id="watt" type="number" placeholder="600">
-    使用時間(h/日): <input id="hours" type="number" placeholder="6">
-    日数: <input id="days" type="number" value="30">
-    単価(円/kWh): <input id="tariff" type="number" value="31">
-    <button onclick="addItem()">追加</button>
-  </div>
+  <main>
+    <section class="card">
+      <div class="row">
+        <div>
+          <label>家電プリセット</label>
+          <select id="preset"></select>
+        </div>
+        <div>
+          <label>家電名</label>
+          <input id="name" placeholder="例: エアコン（冷房）" />
+        </div>
+        <div>
+          <label>消費電力 (W)</label>
+          <input id="watt" type="number" inputmode="decimal" placeholder="600" />
+        </div>
+        <div>
+          <label>使用時間 (h/日)</label>
+          <input id="hours" type="number" inputmode="decimal" placeholder="6" />
+        </div>
+        <div>
+          <label>日数 (日/月)</label>
+          <input id="days" type="number" value="30" />
+        </div>
+        <div>
+          <label>単価 (円/kWh)</label>
+          <input id="tariff" type="number" value="31" />
+        </div>
+      </div>
+      <div class="row">
+        <button id="addBtn" class="primary">この内容で追加</button>
+        <button id="savePresetBtn">↑ をマイ家電に保存</button>
+        <button id="clearPresetsBtn">マイ家電を全消去</button>
+      </div>
+      <div class="muted" style="font-size:12px">式：W × 時間 × 日 ÷ 1000 = kWh。kWh × 単価 = 円</div>
+    </section>
 
-  <table id="list">
-    <thead>
-      <tr><th>家電</th><th>使用量(kWh/月)</th><th>電気代(円/月)</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h2>合計: <span id="total">¥0</span></h2>
+    <section class="card">
+      <table id="list">
+        <thead>
+          <tr>
+            <th>家電</th>
+            <th>使用量 (kWh/月)</th>
+            <th>電気代 (円/月)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <h2>合計: <span id="total">¥0</span></h2>
+    </section>
+  </main>
 
   <script>
+    // ---- プリセット（標準） ----
+    const defaultPresets = [
+      { name: "エアコン（冷房）", watt: 600 },
+      { name: "エアコン（暖房）", watt: 900 },
+      { name: "冷蔵庫", watt: 150 },
+      { name: "テレビ", watt: 100 },
+      { name: "ゲーミングPC（平均）", watt: 400 },
+      { name: "ドライヤー", watt: 1000 },
+    ];
+
+    // ---- マイ家電（保存） ----
+    const MY_KEY = "rasu_my_devices_v1";
+    function loadMyPresets(){
+      try{ return JSON.parse(localStorage.getItem(MY_KEY) || "[]"); }
+      catch(e){ return []; }
+    }
+    function saveMyPresets(list){ localStorage.setItem(MY_KEY, JSON.stringify(list)); }
+
+    function renderPresetSelect(){
+      const sel = document.getElementById("preset");
+      const my = loadMyPresets();
+
+      sel.innerHTML = "";
+      const opt0 = document.createElement("option");
+      opt0.value = ""; opt0.textContent = "（プリセットを選択）";
+      sel.appendChild(opt0);
+
+      // 標準
+      const og1 = document.createElement("optgroup");
+      og1.label = "標準プリセット";
+      defaultPresets.forEach(p=>{
+        const o = document.createElement("option");
+        o.value = JSON.stringify(p);
+        o.textContent = `${p.name} / ${p.watt}W`;
+        og1.appendChild(o);
+      });
+      sel.appendChild(og1);
+
+      // マイ家電
+      const og2 = document.createElement("optgroup");
+      og2.label = "マイ家電（保存済み）";
+      my.forEach(p=>{
+        const o = document.createElement("option");
+        o.value = JSON.stringify(p);
+        o.textContent = `${p.name} / ${p.watt}W`;
+        og2.appendChild(o);
+      });
+      sel.appendChild(og2);
+    }
+
+    // 選択→入力欄に反映（※あとから自由に上書きOK）
+    document.addEventListener("change", (e)=>{
+      if(e.target.id === "preset" && e.target.value){
+        try{
+          const p = JSON.parse(e.target.value);
+          document.getElementById("name").value = p.name;
+          document.getElementById("watt").value = p.watt;
+        }catch(_){}
+      }
+    });
+
+    // 今の入力をマイ家電に保存
+    document.getElementById("savePresetBtn").addEventListener("click", ()=>{
+      const name = document.getElementById("name").value.trim();
+      const watt = parseFloat(document.getElementById("watt").value);
+      if(!name || !isFinite(watt)){ alert("家電名とW数を入力してください"); return; }
+      const my = loadMyPresets();
+      my.push({name, watt});
+      saveMyPresets(my);
+      renderPresetSelect();
+      alert("マイ家電に保存しました！");
+    });
+
+    // マイ家電全消去
+    document.getElementById("clearPresetsBtn").addEventListener("click", ()=>{
+      if(confirm("保存したマイ家電をすべて削除しますか？")){
+        localStorage.removeItem(MY_KEY);
+        renderPresetSelect();
+      }
+    });
+
+    // ---- 本体計算 ----
     const items = [];
     function addItem() {
-      const name = document.getElementById("name").value || "未設定";
+      const name = document.getElementById("name").value.trim() || "未設定";
       const watt = parseFloat(document.getElementById("watt").value);
       const hours = parseFloat(document.getElementById("hours").value);
       const days = parseInt(document.getElementById("days").value);
       const tariff = parseFloat(document.getElementById("tariff").value);
 
-      if(isNaN(watt) || isNaN(hours) || isNaN(days) || isNaN(tariff)) {
-        alert("数値を正しく入力してください");
-        return;
+      if([watt,hours,days,tariff].some(v=>!isFinite(v))){
+        alert("数値を正しく入力してください"); return;
       }
-
       const kWh = (watt * hours * days) / 1000;
       const cost = Math.round(kWh * tariff);
       items.push({name, kWh, cost});
       render();
     }
 
-    function render() {
+    function render(){
       const tbody = document.querySelector("#list tbody");
       tbody.innerHTML = "";
       let total = 0;
       items.forEach(it=>{
         total += it.cost;
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${it.name}</td><td>${it.kWh.toFixed(2)}</td><td>¥${it.cost.toLocaleString()}</td>`;
+        tr.innerHTML = `<td>${escapeHtml(it.name)}</td>
+                        <td>${it.kWh.toFixed(2)}</td>
+                        <td>¥${it.cost.toLocaleString("ja-JP")}</td>`;
         tbody.appendChild(tr);
       });
-      document.getElementById("total").textContent = "¥" + total.toLocaleString();
+      document.getElementById("total").textContent = "¥" + total.toLocaleString("ja-JP");
     }
+
+    function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+    document.getElementById("addBtn").addEventListener("click", addItem);
+
+    // 初期描画
+    renderPresetSelect();
   </script>
 </body>
 </html>
