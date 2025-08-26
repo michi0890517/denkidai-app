@@ -1,9 +1,71 @@
 <!DOCTYPE html>
 <html lang="ja">
-<meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=denkidai_app_v2.html">
-<title>電気代節約アプリ</title>
+<head>
+  <meta charset="UTF-8">
+  <title>電気代節約アプリ v1</title>
+  <style>
+    body { font-family: sans-serif; background:#0b0f14; color:#e8f0ff; padding:20px; }
+    h1 { color:#5ad1ff; }
+    input, button { padding:8px; margin:5px; }
+    table { border-collapse: collapse; margin-top:15px; width:100%; }
+    th, td { border:1px solid #444; padding:8px; text-align:center; }
+    th { background:#111824; }
+  </style>
+</head>
 <body>
-  <p>自動で開かない場合は <a href="denkidai_app_v2.html">こちら</a> をクリック。</p>
+  <h1>⚡ 電気代節約アプリ v1</h1>
+  <p>家電の消費電力・使用時間を入力して月の電気代を計算します。</p>
+
+  <div>
+    家電名: <input id="name" placeholder="例: エアコン">
+    消費電力(W): <input id="watt" type="number" placeholder="600">
+    使用時間(h/日): <input id="hours" type="number" placeholder="6">
+    日数: <input id="days" type="number" value="30">
+    単価(円/kWh): <input id="tariff" type="number" value="31">
+    <button onclick="addItem()">追加</button>
+  </div>
+
+  <table id="list">
+    <thead>
+      <tr><th>家電</th><th>使用量(kWh/月)</th><th>電気代(円/月)</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>合計: <span id="total">¥0</span></h2>
+
+  <script>
+    const items = [];
+    function addItem() {
+      const name = document.getElementById("name").value || "未設定";
+      const watt = parseFloat(document.getElementById("watt").value);
+      const hours = parseFloat(document.getElementById("hours").value);
+      const days = parseInt(document.getElementById("days").value);
+      const tariff = parseFloat(document.getElementById("tariff").value);
+
+      if(isNaN(watt) || isNaN(hours) || isNaN(days) || isNaN(tariff)) {
+        alert("数値を正しく入力してください");
+        return;
+      }
+
+      const kWh = (watt * hours * days) / 1000;
+      const cost = Math.round(kWh * tariff);
+      items.push({name, kWh, cost});
+      render();
+    }
+
+    function render() {
+      const tbody = document.querySelector("#list tbody");
+      tbody.innerHTML = "";
+      let total = 0;
+      items.forEach(it=>{
+        total += it.cost;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${it.name}</td><td>${it.kWh.toFixed(2)}</td><td>¥${it.cost.toLocaleString()}</td>`;
+        tbody.appendChild(tr);
+      });
+      document.getElementById("total").textContent = "¥" + total.toLocaleString();
+    }
+  </script>
 </body>
 </html>
