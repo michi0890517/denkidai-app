@@ -1,59 +1,46 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>電気代節約アプリ v2.1（グラフ/通知/クラウド/光シミュ + プリセット）</title>
-  <style>
-    :root{
-      --bg:#0b0f14; --panel:#111824; --text:#e8f0ff; --muted:#9fb3c8;
-      --accent:#5ad1ff; --accent2:#7cffc2; --danger:#ff6b6b; --good:#64f4a3;
-      --warn:#ffd36e; --border:#233043;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:#0b0f14;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;line-height:1.6}
-    header{padding:18px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(90,209,255,.08),rgba(124,255,194,.05));position:sticky;top:0;z-index:10;backdrop-filter:blur(6px)}
-    h1{margin:0;font-size:clamp(20px,3.5vw,28px)}
-    .sub{color:var(--muted);font-size:13px}
-    main{padding:18px;max-width:1200px;margin:0 auto}
-    .grid{display:grid;gap:14px;grid-template-columns:1fr}
-    @media(min-width:1100px){.grid{grid-template-columns:1.25fr 1fr}}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid var(--border);border-radius:14px;padding:14px}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
-    input,select,button,textarea{background:#0e1520;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;outline:none}
-    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(90,209,255,.12)}
-    button{cursor:pointer;border:1px solid transparent;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#001018;font-weight:700}
-    button.secondary{background:transparent;color:var(--text);border-color:var(--border)}
-    table{width:100%;border-collapse:collapse;font-size:14px}
-    th,td{border-bottom:1px dashed var(--border);padding:10px;text-align:left}
-    th{color:var(--muted)}
-    .right{text-align:right}
-    .bar{height:10px;border-radius:999px;background:#0e1520;position:relative;border:1px solid var(--border);overflow:hidden}
-    .bar>span{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
-    .kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-    @media(min-width:640px){.kpi{grid-template-columns:repeat(4,1fr)}}
-    .kpi .box{background:#0e1520;border:1px solid var(--border);border-radius:12px;padding:12px}
-    .kpi .num{font-size:22px;font-weight:800}
-    .small{font-size:12px}
-    .tips li{margin-bottom:10px}
-    canvas{width:100%;height:320px;background:#0e1520;border:1px solid var(--border);border-radius:12px;display:block}
-    .hr{height:1px;background:var(--border);margin:14px 0}
-    .tag{padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;color:var(--muted);display:inline-block;margin-right:6px}
-    .muted{color:var(--muted)}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>電気代アプリ v3（週次トラッカー：先週/今週/来週）</title>
+<style>
+:root{--bg:#0b0f14;--panel:#111824;--text:#e8f0ff;--muted:#9fb3c8;--accent:#5ad1ff;--accent2:#7cffc2;--border:#233043;--ok:#64f4a3;--warn:#ffd36e;--bad:#ff6b6b}
+*{box-sizing:border-box} body{margin:0;background:#0b0f14;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;line-height:1.6}
+header{position:sticky;top:0;z-index:10;padding:16px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(90,209,255,.08),rgba(124,255,194,.05));backdrop-filter:blur(6px)}
+h1{margin:0;font-size:clamp(18px,3.2vw,28px)} .sub{color:var(--muted);font-size:12px}
+main{max-width:1200px;margin:0 auto;padding:16px} .grid{display:grid;gap:14px;grid-template-columns:1fr} @media(min-width:1100px){.grid{grid-template-columns:1.2fr 1fr}}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid var(--border);border-radius:14px;padding:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap} label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+input,select,button,textarea{background:#0e1520;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(90,209,255,.12)}
+button{cursor:pointer;border:1px solid transparent;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#001018;font-weight:700}
+button.secondary{background:transparent;color:var(--text);border-color:var(--border)}
+table{width:100%;border-collapse:collapse;font-size:14px} th,td{border-bottom:1px dashed var(--border);padding:10px;text-align:left} th{color:var(--muted)}
+.kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:10px} @media(min-width:640px){.kpi{grid-template-columns:repeat(4,1fr)}}
+.kpi .box{background:#0e1520;border:1px solid var(--border);border-radius:12px;padding:12px} .kpi .num{font-size:22px;font-weight:800}
+.small{font-size:12px;color:var(--muted)} .tag{padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;color:var(--muted);display:inline-block}
+.flex-between{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+canvas{width:100%;height:320px;background:#0e1520;border:1px solid var(--border);border-radius:12px;display:block}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border)}
+.badge.ok{color:#001014;background:var(--ok)} .badge.warn{color:#001014;background:var(--warn)} .badge.bad{color:#001014;background:var(--bad)}
+summary{cursor:pointer}
+</style>
 </head>
 <body>
 <header>
-  <h1>電気代節約アプリ v2.1 <span class="tag">グラフ/通知/クラウド/光シミュ + プリセット/マイ家電</span></h1>
-  <div class="sub">プリセットでサクッと入力→上書きOK。家電は保存して次回も使える。家族共有や通知も対応。</div>
+  <h1>電気代アプリ v3 <span class="badge">週次トラッカー</span> <span class="badge">先週/今週/来週</span></h1>
+  <div class="sub">プリセット→日次ログ→週次集計。先週比・来週予測も自動。ローカル保存のみ（実測連携なし）。</div>
 </header>
 
 <main class="grid">
 
-  <!-- 左：入力 -->
+  <!-- 入力＆プリセット -->
   <section class="card">
-    <h2 style="margin:0 0 6px">① 入力（プリセット & 上書きOK）</h2>
+    <div class="flex-between">
+      <h2 style="margin:0">① クイック記録（プリセット & 上書き可）</h2>
+      <span class="small">式: (W × 時間) ÷ 1000 = kWh、kWh × 単価 = 円</span>
+    </div>
     <div class="row">
       <div>
         <label>家電プリセット</label>
@@ -68,377 +55,381 @@
         <input id="watt" type="number" inputmode="decimal" placeholder="600">
       </div>
       <div>
-        <label>使用時間 (h/日)</label>
-        <input id="hours" type="number" inputmode="decimal" placeholder="6">
-      </div>
-      <div>
-        <label>日数 (日/月)</label>
-        <input id="days" type="number" value="30">
+        <label>使用時間 (h)</label>
+        <input id="hours" type="number" inputmode="decimal" placeholder="1.5">
       </div>
       <div>
         <label>単価 (円/kWh)</label>
         <input id="tariff" type="number" value="31">
       </div>
+      <div>
+        <label>日付</label>
+        <input id="date" type="date">
+      </div>
+      <div>
+        <label>カテゴリー</label>
+        <select id="category">
+          <option>冷暖房</option><option>キッチン</option><option>照明</option>
+          <option>情報家電</option><option>娯楽・ゲーム</option><option>その他</option>
+        </select>
+      </div>
     </div>
     <div class="row" style="margin-top:6px">
-      <button id="add" title="表に追加">この内容で追加</button>
-      <button class="secondary" id="savePreset">↑ をマイ家電に保存</button>
-      <button class="secondary" id="clearPresets">マイ家電全消去</button>
-    </div>
-    <div class="small muted">式: W×時間×日÷1000=kWh、kWh×単価=円</div>
-  </section>
-
-  <!-- 右：KPI & 操作 -->
-  <section class="card">
-    <h2 style="margin:0 0 6px">② 概要（KPI）</h2>
-    <div class="kpi">
-      <div class="box"><div class="small muted">月間使用量</div><div class="num" id="kwh">0 kWh</div></div>
-      <div class="box"><div class="small muted">月間電気代</div><div class="num" id="yen">¥0</div></div>
-      <div class="box"><div class="small muted">最大の電気食い</div><div class="num" id="hog">—</div></div>
-      <div class="box"><div class="small muted">10%削減シミュ</div><div class="num" id="sim">-¥0</div></div>
-    </div>
-    <div class="hr"></div>
-    <div class="row">
-      <button class="secondary" id="export">データ書き出し</button>
-      <label for="file" class="secondary" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;width:auto;padding:10px 12px;border-radius:10px;border:1px solid var(--border)">
-        <input type="file" id="file" accept=".json" style="display:none">取り込み
+      <button id="addRecord">この内容で記録</button>
+      <button class="secondary" id="saveMyDevice">↑ をマイ家電に保存</button>
+      <button class="secondary" id="clearMyDevice">マイ家電全消去</button>
+      <button class="secondary" id="exportData">書き出し</button>
+      <label for="importFile" class="secondary" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;width:auto;padding:10px 12px;border-radius:10px;border:1px solid var(--border)">
+        <input type="file" id="importFile" accept=".json" style="display:none">取り込み
       </label>
-      <button class="secondary" id="clear">すべて削除</button>
-      <span class="tag">通知: <span id="notifStatus">未許可</span></span>
-      <button class="secondary" id="notifBtn">通知を許可</button>
-    </div>
-    <div class="row" style="margin-top:8px">
-      <div>
-        <label>1日の警告しきい値（円）</label>
-        <input id="dailyLimitYen" type="number" placeholder="例：200">
-      </div>
-      <div style="align-self:flex-end"><button class="secondary" id="checkToday">今日の使用をチェック</button></div>
     </div>
   </section>
 
-  <!-- 一覧 -->
-  <section class="card" style="grid-column:1/-1">
-    <h2 style="margin:0 0 6px">③ 家電リスト</h2>
-    <div class="small muted" id="empty">まだ何も追加されていません。上のフォームから家電を追加してください。</div>
-    <div class="tablewrap">
-      <table id="table">
-        <thead><tr><th>家電</th><th class="right">使用量 (kWh/月)</th><th class="right">電気代 (円/月)</th><th>割合</th><th>カテゴリー</th><th class="right">操作</th></tr></thead>
-        <tbody></tbody>
-      </table>
+  <!-- 週のコントロール & KPI -->
+  <section class="card">
+    <div class="flex-between">
+      <h2 style="margin:0">② 週ビュー（先週/今週/来週）</h2>
+      <div class="row">
+        <button class="secondary" id="prevWeek">＜ 先週</button>
+        <button class="secondary" id="thisWeek">今週</button>
+        <button class="secondary" id="nextWeek">来週 ＞</button>
+        <input id="jumpDate" type="date" title="この日を含む週へジャンプ">
+      </div>
     </div>
+    <div class="flex-between" style="margin-top:8px">
+      <div><span class="tag">週範囲</span> <strong id="weekLabel">—</strong></div>
+      <div class="small">週の開始は<strong>月曜</strong>基準</div>
+    </div>
+
+    <div class="kpi" style="margin-top:10px">
+      <div class="box"><div class="small">今週 合計kWh</div><div class="num" id="kpiKwh">0.00</div></div>
+      <div class="box"><div class="small">今週 電気代</div><div class="num" id="kpiYen">¥0</div></div>
+      <div class="box"><div class="small">先週比</div><div class="num" id="kpiWoW">—</div></div>
+      <div class="box"><div class="small">来週予測</div><div class="num" id="kpiNext">¥0</div></div>
+    </div>
+  </section>
+
+  <!-- 週内の明細 -->
+  <section class="card" style="grid-column:1/-1">
+    <h2 style="margin:0 0 6px">③ 日別明細（今表示中の週）</h2>
+    <table id="weekTable">
+      <thead><tr><th>日付</th><th>kWh</th><th>電気代</th><th>内訳</th></tr></thead>
+      <tbody></tbody>
+    </table>
   </section>
 
   <!-- グラフ -->
   <section class="card">
-    <h2 style="margin:0 0 6px">④ 円グラフ（電気代の割合）</h2>
-    <canvas id="pie"></canvas>
+    <h2 style="margin:0 0 6px">④ 日別コスト（今週）</h2>
+    <canvas id="barWeek"></canvas>
   </section>
 
   <section class="card">
-    <h2 style="margin:0 0 6px">⑤ 推移グラフ（仮想・30日）</h2>
-    <canvas id="line"></canvas>
-    <div class="small muted">※ 現段階は入力から日割りで仮想生成。スマートメーター連携やCSVで実測対応予定。</div>
-  </section>
-
-  <!-- アドバイス -->
-  <section class="card" style="grid-column:1/-1">
-    <h2 style="margin:0 0 6px">⑥ 節約アドバイス</h2>
-    <ul class="tips" id="tips"></ul>
-  </section>
-
-  <!-- 光シミュ -->
-  <section class="card">
-    <h2 style="margin:0 0 6px">⑦ 光時代シミュレーション</h2>
-    <label>光効率ブースト係数（例：5 = 今の5倍効率 → 電気代80%減）</label>
-    <input id="lightBoost" type="range" min="1" max="10" step="0.5" value="5">
-    <div class="row">
-      <div class="tag">ブースト: <span id="boostLabel">5x</span></div>
-      <div class="tag">光化後の想定電気代: <span id="yenLight">¥0</span></div>
-      <div class="tag">差額: <span id="yenSaved">-¥0</span></div>
-    </div>
-    <div class="small muted">※ 概算：現在コスト ÷ 係数。将来はデバイスごとの光効率テーブルで精密化予定。</div>
-  </section>
-
-  <!-- クラウド共有 -->
-  <section class="card">
-    <h2 style="margin:0 0 6px">⑧ クラウド共有（任意 / Firebase）</h2>
-    <div class="small muted">構成JSONと共有IDを入れて「同期ON」。家族全員が同じ共有IDを使えば同じデータが見えます。</div>
-    <textarea id="firebaseConfig" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea>
-    <div class="row" style="margin-top:8px">
+    <h2 style="margin:0 0 6px">⑤ 先週/今週/来週（予測）</h2>
+    <canvas id="barCompare"></canvas>
+    <div class="small">来週は直近2週の平均×季節係数（任意：1.00）で予測</div>
+    <div class="row" style="margin-top:6px">
       <div>
-        <label>共有ID</label>
-        <input id="shareId" placeholder="例：rasu-family-01">
+        <label>季節係数（冷暖房期など）</label>
+        <input id="seasonCoef" type="number" step="0.05" value="1.00">
       </div>
-      <div style="align-self:flex-end"><button class="secondary" id="toggleSync">同期: OFF</button></div>
+      <button class="secondary" id="recalcForecast" style="align-self:flex-end">予測を再計算</button>
     </div>
+  </section>
+
+  <!-- ヒント -->
+  <section class="card" style="grid-column:1/-1">
+    <details>
+      <summary>ℹ️ 使い方のヒント</summary>
+      <div class="small" style="margin-top:8px">
+        • まずはプリセットから今日使った時間(h)を入れて「記録」。<br>
+        • 週ビューで先週⇄今週⇄来週を切り替え。来週は予測値（実測が入れば週替わりで精度UP）。<br>
+        • 実測を増やすと「先週比」「予測」が効いてくる。<br>
+        • いつでも上書き・削除OK。JSONでバックアップ/復元もできる。
+      </div>
+    </details>
   </section>
 
 </main>
 
 <script>
-// ====== プリセット / マイ家電 ======
+// ---------- 日付ユーティリティ ----------
+const tzOffset = (new Date()).getTimezoneOffset(); // 使わないが将来拡張用
+const fmtDate = d => d.toISOString().slice(0,10);
+const fromYmd = (s)=>{ const [y,m,dd]=s.split("-").map(Number); return new Date(y, m-1, dd); };
+const startOfWeekMon = (d)=>{ const nd=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const day=(nd.getDay()+6)%7; nd.setDate(nd.getDate()-day); return nd; }; // Mon=0
+const addDays = (d,n)=>{ const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+const range7 = (start)=> Array.from({length:7},(_,i)=> addDays(start,i));
+
+// ---------- ストレージ ----------
+const STORE_KEY = "rasu_v3_records";
+const DEV_KEY = "rasu_v3_my_devices";
+function loadRecords(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||"[]"); }catch(_){ return []; } }
+function saveRecords(recs){ localStorage.setItem(STORE_KEY, JSON.stringify(recs)); }
+function loadMyDevices(){ try{ return JSON.parse(localStorage.getItem(DEV_KEY)||"[]"); }catch(_){ return []; } }
+function saveMyDevices(list){ localStorage.setItem(DEV_KEY, JSON.stringify(list)); }
+
+// ---------- データ（記録：1行=1回の使用） ----------
+let records = loadRecords(); // {id, date:"YYYY-MM-DD", name, watt, hours, tariff, kwh, yen, category}
+let myDevices = loadMyDevices();
+
+// ---------- プリセット ----------
 const defaultPresets = [
-  { name: "エアコン（冷房）", watt: 600, category:"冷暖房" },
-  { name: "エアコン（暖房）", watt: 900, category:"冷暖房" },
-  { name: "冷蔵庫", watt: 150, category:"キッチン" },
-  { name: "テレビ", watt: 100, category:"情報家電" },
-  { name: "ゲーミングPC（平均）", watt: 400, category:"娯楽・ゲーム" },
-  { name: "ドライヤー", watt: 1000, category:"その他" },
+  {name:"エアコン（冷房）", watt:600, category:"冷暖房"},
+  {name:"エアコン（暖房）", watt:900, category:"冷暖房"},
+  {name:"冷蔵庫", watt:150, category:"キッチン"},
+  {name:"テレビ", watt:100, category:"情報家電"},
+  {name:"ゲーミングPC（平均）", watt:400, category:"娯楽・ゲーム"},
+  {name:"ドライヤー", watt:1000, category:"その他"},
 ];
-const MY_KEY = "rasu_my_devices_v21";
-function loadMyPresets(){ try{return JSON.parse(localStorage.getItem(MY_KEY)||"[]");}catch(e){return[];} }
-function saveMyPresets(list){ localStorage.setItem(MY_KEY, JSON.stringify(list)); }
-function renderPresetSelect(){
+function renderPreset(){
   const sel = document.getElementById("preset");
-  const my = loadMyPresets();
   sel.innerHTML = "";
-  const opt0 = new Option("（プリセットを選択）",""); sel.appendChild(opt0);
-  const std = document.createElement("optgroup"); std.label="標準プリセット";
-  defaultPresets.forEach(p=> std.appendChild(new Option(`${p.name} / ${p.watt}W`, JSON.stringify(p))));
-  sel.appendChild(std);
-  const mine = document.createElement("optgroup"); mine.label="マイ家電（保存済み）";
-  my.forEach(p=> mine.appendChild(new Option(`${p.name} / ${p.watt}W`, JSON.stringify(p))));
-  sel.appendChild(mine);
+  sel.appendChild(new Option("（プリセットを選択）",""));
+  const og1=document.createElement("optgroup"); og1.label="標準プリセット";
+  defaultPresets.forEach(p=> og1.appendChild(new Option(`${p.name} / ${p.watt}W`, JSON.stringify(p))));
+  sel.appendChild(og1);
+  const og2=document.createElement("optgroup"); og2.label="マイ家電（保存済み）";
+  myDevices.forEach(p=> og2.appendChild(new Option(`${p.name} / ${p.watt}W`, JSON.stringify(p))));
+  sel.appendChild(og2);
 }
-let currentCategory = "その他";
 document.addEventListener("change",(e)=>{
   if(e.target.id==="preset" && e.target.value){
     try{
       const p = JSON.parse(e.target.value);
       document.getElementById("name").value = p.name;
       document.getElementById("watt").value = p.watt;
-      if(p.category) currentCategory = p.category;
+      document.getElementById("category").value = p.category || "その他";
     }catch(_){}
   }
 });
-document.getElementById("savePreset").addEventListener("click",()=>{
-  const name = document.getElementById("name").value.trim();
-  const watt = parseFloat(document.getElementById("watt").value);
-  if(!name || !isFinite(watt)){ alert("家電名とW数を入力してください"); return; }
-  const my = loadMyPresets(); my.push({name, watt}); saveMyPresets(my); renderPresetSelect(); alert("マイ家電に保存しました！");
+document.getElementById("saveMyDevice").addEventListener("click", ()=>{
+  const name=document.getElementById("name").value.trim();
+  const watt=parseFloat(document.getElementById("watt").value);
+  const category=document.getElementById("category").value || "その他";
+  if(!name || !isFinite(watt)) return alert("家電名とW数を入力してください");
+  myDevices.push({name,watt,category});
+  saveMyDevices(myDevices); renderPreset(); alert("マイ家電に保存しました！");
 });
-document.getElementById("clearPresets").addEventListener("click",()=>{
-  if(confirm("保存したマイ家電をすべて削除しますか？")){ localStorage.removeItem(MY_KEY); renderPresetSelect(); }
+document.getElementById("clearMyDevice").addEventListener("click", ()=>{
+  if(confirm("保存したマイ家電をすべて削除しますか？")){
+    myDevices=[]; saveMyDevices(myDevices); renderPreset();
+  }
 });
 
-// ====== 本体データ ======
-const storeKey = "rasu_denkidai_v21";
-let items = []; let defaultTariff = 31; let dailyLimitYen = 0;
-
-function yen(n){ return "¥"+Math.round(n).toLocaleString("ja-JP"); }
-function kwh(n){ return (Math.round(n*100)/100).toLocaleString("ja-JP")+" kWh"; }
-function calc(item){
-  const {watt, hours, days, standbyW=0, tariff} = item;
-  const kwhActive = (watt * hours * days) / 1000;
-  const kwhStandby = (standbyW * 24 * days) / 1000;
-  const kwhTotal = kwhActive + kwhStandby;
-  const cost = kwhTotal * (tariff ?? defaultTariff);
-  return {kwhActive, kwhStandby, kwhTotal, cost};
+// ---------- 週ビュー ----------
+let currentWeekStart = startOfWeekMon(new Date()); // 今日を含む週の月曜
+function setWeekLabel(){
+  const a = currentWeekStart;
+  const b = addDays(a,6);
+  document.getElementById("weekLabel").textContent = `${fmtDate(a)} 〜 ${fmtDate(b)}`;
 }
-function save(){ localStorage.setItem(storeKey, JSON.stringify({items, defaultTariff, dailyLimitYen})); }
-function load(){
-  try{
-    const d = JSON.parse(localStorage.getItem(storeKey)||"{}");
-    items = d.items||[]; if(d.defaultTariff) defaultTariff = d.defaultTariff; if(d.dailyLimitYen) dailyLimitYen = d.dailyLimitYen;
-  }catch(e){ items=[]; }
-  document.getElementById("tariff").value = defaultTariff;
-  document.getElementById("dailyLimitYen").value = dailyLimitYen || "";
-}
+document.getElementById("prevWeek").addEventListener("click", ()=>{ currentWeekStart = addDays(currentWeekStart,-7); redraw(); });
+document.getElementById("thisWeek").addEventListener("click", ()=>{ currentWeekStart = startOfWeekMon(new Date()); redraw(); });
+document.getElementById("nextWeek").addEventListener("click", ()=>{ currentWeekStart = addDays(currentWeekStart,7); redraw(); });
+document.getElementById("jumpDate").addEventListener("change", (e)=>{ const d=fromYmd(e.target.value); if(!isFinite(d)) return; currentWeekStart = startOfWeekMon(d); redraw(); });
 
-// ====== 追加/編集/削除 ======
-document.getElementById("add").addEventListener("click", ()=>{
-  const name = document.getElementById("name").value.trim() || "未設定の家電";
+// ---------- 記録追加 ----------
+document.getElementById("addRecord").addEventListener("click", ()=>{
+  const name = document.getElementById("name").value.trim() || "未設定";
   const watt = parseFloat(document.getElementById("watt").value);
   const hours = parseFloat(document.getElementById("hours").value);
-  const days = parseInt(document.getElementById("days").value||"30",10);
-  const tariff = parseFloat(document.getElementById("tariff").value)||defaultTariff;
-  defaultTariff = tariff;
-  if([watt,hours,days].some(v=>!isFinite(v)||v<0)){ alert("入力に誤りがあります（W・時間・日数は0以上の数値）。"); return; }
-  items.push({name, watt, hours, days, standbyW:0, category: currentCategory, tariff});
-  save(); render(); syncPush();
+  const tariff = parseFloat(document.getElementById("tariff").value);
+  let date = document.getElementById("date").value;
+  const category = document.getElementById("category").value || "その他";
+  if([watt,hours,tariff].some(v=>!isFinite(v))) return alert("数値を正しく入力してください");
+  if(!date){ date = fmtDate(new Date()); document.getElementById("date").value = date; }
+  const kwh = (watt*hours)/1000;
+  const yen = kwh*tariff;
+  const id = Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,7);
+  records.push({id, date, name, watt, hours, tariff, kwh, yen, category});
+  saveRecords(records);
+  redraw();
 });
 
-document.addEventListener("click",(e)=>{
-  const d = e.target.dataset;
-  if(d.del){ const i=+d.del; if(confirm("削除しますか？")){ items.splice(i,1); save(); render(); syncPush(); } }
-  if(d.edit){ const i=+d.edit; const it=items[i];
-    const name = prompt("家電名", it.name) ?? it.name;
-    const watt = +prompt("消費電力(W)", it.watt) || it.watt;
-    const hours = +prompt("使用時間(時間/日)", it.hours) || it.hours;
-    const days = +prompt("使用日数(日/月)", it.days) || it.days;
-    const standbyW = +prompt("待機電力(W/24h)", it.standbyW||0) || it.standbyW||0;
-    const tariff = +prompt("単価(円/kWh)", it.tariff ?? defaultTariff) || (it.tariff ?? defaultTariff);
-    const category = prompt("カテゴリー（冷暖房/キッチン/照明/情報家電/娯楽・ゲーム/その他）", it.category||"その他") ?? (it.category||"その他");
-    items[i] = {name,watt,hours,days,standbyW,category,tariff}; defaultTariff = tariff;
-    save(); render(); syncPush();
-  }
-});
+// ---------- 週集計 ----------
+function getWeekRecords(start){
+  const dates = range7(start).map(fmtDate);
+  return records.filter(r=> dates.includes(r.date));
+}
+function sum(list, key){ return list.reduce((s,x)=> s + (x[key]||0), 0); }
+function woW(thisWeekCost, lastWeekCost){
+  if(lastWeekCost<=0) return {diff:"—", badge:""};
+  const delta = thisWeekCost - lastWeekCost;
+  const pct = (delta/lastWeekCost)*100;
+  const sign = delta>0 ? "+" : "";
+  const badge = delta<=0 ? "ok" : (pct<=10 ? "warn" : "bad");
+  return {diff: `${sign}${Math.round(pct)}%（${sign}¥${Math.round(delta).toLocaleString("ja-JP")}）`, badge};
+}
+function forecastNextWeekCost(start){
+  // 直近2週の合計コスト平均 × 季節係数
+  const last = getWeekRecords(addDays(start,-7)); const prev = getWeekRecords(addDays(start,-14));
+  const base = ((sum(last,"yen") + sum(prev,"yen")) / 2) || sum(last,"yen") || sum(getWeekRecords(start),"yen");
+  const coef = parseFloat(document.getElementById("seasonCoef").value||"1.0") || 1.0;
+  return base * coef;
+}
+document.getElementById("recalcForecast").addEventListener("click", redraw);
 
-// ====== 表/メトリクス描画 ======
-function render(){
-  const tbody = document.querySelector("#table tbody");
+// ---------- 表描画 ----------
+function renderWeekTable(){
+  const tbody = document.querySelector("#weekTable tbody");
   tbody.innerHTML = "";
-  document.getElementById("empty").style.display = items.length? "none":"block";
-
-  let totalKwh=0,totalYen=0;
-  const rows = items.map((it,idx)=>{ const r=calc(it); totalKwh+=r.kwhTotal; totalYen+=r.cost; return {idx,it,r}; });
-  rows.forEach(row=> row.ratio = totalYen>0 ? row.r.cost/totalYen : 0);
-
-  rows.forEach(({idx,it,r,ratio})=>{
+  const days = range7(currentWeekStart);
+  days.forEach(d=>{
+    const ymd = fmtDate(d);
+    const list = records.filter(r=> r.date===ymd);
+    const kwh = sum(list,"kwh");
+    const yen = sum(list,"yen");
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = list.length ? `${list.length} 件の内訳` : "—";
+    details.appendChild(summary);
+    if(list.length){
+      const ul = document.createElement("ul");
+      ul.className = "small";
+      list.forEach(x=>{
+        const li = document.createElement("li");
+        li.innerHTML = `${escapeHtml(x.name)} / ${x.watt}W×${x.hours}h = ${x.kwh.toFixed(2)}kWh / ¥${Math.round(x.yen).toLocaleString("ja-JP")} <button class="secondary" data-edit="${x.id}">編集</button> <button class="secondary" data-del="${x.id}">削除</button>`;
+        ul.appendChild(li);
+      });
+      details.appendChild(ul);
+    }
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><div><strong>${escapeHtml(it.name)}</strong></div>
-      <div class="small muted">${it.watt}W × ${it.hours}h/日 × ${it.days}日/月</div></td>
-      <td class="right">${kwh(r.kwhTotal)}</td>
-      <td class="right">${yen(r.cost)}</td>
-      <td style="min-width:160px"><div class="bar"><span style="width:${(ratio*100).toFixed(1)}%"></span></div><div class="small muted">${(ratio*100).toFixed(1)}%</div></td>
-      <td>${it.category||"その他"}</td>
-      <td class="right"><button class="secondary" data-edit="${idx}">編集</button> <button class="secondary" data-del="${idx}">削除</button></td>`;
+    tr.innerHTML = `<td>${ymd}</td><td>${kwh.toFixed(2)}</td><td>¥${Math.round(yen).toLocaleString("ja-JP")}</td><td></td>`;
+    tr.children[3].appendChild(details);
     tbody.appendChild(tr);
   });
-
-  document.getElementById("kwh").textContent = kwh(totalKwh);
-  document.getElementById("yen").textContent = yen(totalYen);
-  const hog = rows.slice().sort((a,b)=>b.r.cost-a.r.cost)[0];
-  document.getElementById("hog").textContent = hog ? hog.it.name : "—";
-  let simSave=0;
-  rows.slice().sort((a,b)=>b.r.cost-a.r.cost).slice(0,2).forEach(({it})=>{ const r=calc(it); const r2=calc({...it,hours:it.hours*0.9}); simSave += r.cost-r2.cost; });
-  document.getElementById("sim").textContent = "-"+yen(simSave);
-
-  renderTips(rows,totalYen);
-  drawPie(rows);
-  drawLine(rows);
-  updateLightSim(totalYen);
 }
+document.addEventListener("click",(e)=>{
+  const d = e.target.dataset;
+  if(d.del){
+    const id=d.del;
+    records = records.filter(r=> r.id!==id);
+    saveRecords(records); redraw();
+  }
+  if(d.edit){
+    const rec = records.find(r=> r.id===d.edit); if(!rec) return;
+    const name = prompt("家電名", rec.name) ?? rec.name;
+    const watt = +prompt("消費電力(W)", rec.watt) || rec.watt;
+    const hours = +prompt("使用時間(h)", rec.hours) || rec.hours;
+    const tariff = +prompt("単価(円/kWh)", rec.tariff) || rec.tariff;
+    const date = prompt("日付(YYYY-MM-DD)", rec.date) ?? rec.date;
+    const category = prompt("カテゴリー", rec.category||"その他") ?? (rec.category||"その他");
+    const kwh = (watt*hours)/1000; const yen = kwh*tariff;
+    Object.assign(rec,{name,watt,hours,tariff,date,category,kwh,yen});
+    saveRecords(records); redraw();
+  }
+});
 function escapeHtml(s){ return (s||"").toString().replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
 
-function renderTips(rows,totalYen){
-  const ul = document.getElementById("tips"); ul.innerHTML="";
-  if(rows.length===0){ ul.innerHTML = "<li class='muted'>家電を追加すると、ここに節約アドバイスが表示されます。</li>"; return; }
-  rows.slice().sort((a,b)=>b.r.cost-a.r.cost).slice(0,3).forEach(({it})=>{
-    const base=calc(it); const reduced={...it,hours:Math.max(0,it.hours-1)}; const diff = base.cost - calc(reduced).cost;
-    const li=document.createElement("li");
-    li.innerHTML = `<div><strong>${escapeHtml(it.name)}</strong>：<span class="good">1日 -1時間</span>で <strong>${yen(diff)}</strong> / 月の削減</div>
-    <div class="small muted">今 ${it.hours}h → ${Math.max(0,it.hours-1)}h（単価 ${it.tariff ?? defaultTariff} 円/kWh）</div>`;
-    ul.appendChild(li);
-  });
-  const standbyYen = rows.reduce((s,{it})=> s + calc(it).kwhStandby * (it.tariff ?? defaultTariff), 0);
-  if(standbyYen/Math.max(1,totalYen)>0.1){
-    const li=document.createElement("li"); li.innerHTML = `<div><strong>待機電力</strong>：スマートプラグ等でオフ→月 <strong>${yen(standbyYen*0.5)}</strong> 以上の削減見込み。</div>`; ul.appendChild(li);
-  }
-  const li2=document.createElement("li"); li2.innerHTML=`<div>電力量単価は契約に合わせて更新を。時間帯別料金があるなら項目を分けると精度UP（今後対応予定）。</div>`; ul.appendChild(li2);
+// ---------- KPI / 比較 ----------
+function renderKpi(){
+  const thisW = getWeekRecords(currentWeekStart);
+  const lastW = getWeekRecords(addDays(currentWeekStart,-7));
+  const kwhThis = sum(thisW,"kwh");
+  const yenThis = sum(thisW,"yen");
+  const yenLast = sum(lastW,"yen");
+  const wow = woW(yenThis, yenLast);
+  const next = forecastNextWeekCost(currentWeekStart);
+
+  document.getElementById("kpiKwh").textContent = kwhThis.toFixed(2);
+  document.getElementById("kpiYen").textContent = "¥"+Math.round(yenThis).toLocaleString("ja-JP");
+  const k = document.getElementById("kpiWoW");
+  k.textContent = wow.diff;
+  k.className = "num "+(wow.badge ? ("badge "+wow.badge) : "");
+  document.getElementById("kpiNext").textContent = "¥"+Math.round(next).toLocaleString("ja-JP");
 }
 
-// ====== グラフ（Canvas） ======
-function drawPie(rows){
-  const canvas = document.getElementById("pie"); const ctx = canvas.getContext("2d");
-  const DPR=window.devicePixelRatio||1; const W=canvas.clientWidth, H=canvas.clientHeight; canvas.width=W*DPR; canvas.height=H*DPR; ctx.scale(DPR,DPR);
+// ---------- グラフ（Canvas, ライブラリ不使用） ----------
+function drawBarWeek(){
+  const days = range7(currentWeekStart).map(fmtDate);
+  const data = days.map(d => Math.round(sum(records.filter(r=>r.date===d),"yen")));
+  const canvas=document.getElementById("barWeek"), ctx=canvas.getContext("2d");
+  const DPR=window.devicePixelRatio||1, W=canvas.clientWidth, H=canvas.clientHeight; canvas.width=W*DPR; canvas.height=H*DPR; ctx.scale(DPR,DPR);
   ctx.clearRect(0,0,W,H);
-  const total = rows.reduce((s,r)=>s+r.r.cost,0); if(total<=0){ ctx.fillStyle="#9fb3c8"; ctx.fillText("データがありません",10,20); return; }
-  let start=-Math.PI/2; const cx=W/2, cy=H/2, r=Math.min(W,H)*0.36; const colors=rows.map((_,i)=>`hsl(${(i*55)%360} 80% 55%)`);
-  rows.forEach((row,i)=>{ const ang=(row.r.cost/total)*Math.PI*2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,start+ang); ctx.closePath(); ctx.fillStyle=colors[i]; ctx.fill(); start+=ang; });
-  ctx.font="12px system-ui"; const x=14,y=14; rows.forEach((row,i)=>{ const yy=y+i*18; ctx.fillStyle=colors[i]; ctx.fillRect(x,yy,12,12); ctx.fillStyle="#e8f0ff"; ctx.fillText(`${row.it.name} (${(row.r.cost/total*100).toFixed(1)}%)`, x+18, yy+10); });
-}
-function drawLine(rows){
-  const canvas = document.getElementById("line"); const ctx = canvas.getContext("2d");
-  const DPR=window.devicePixelRatio||1; const W=canvas.clientWidth, H=canvas.clientHeight; canvas.width=W*DPR; canvas.height=H*DPR; ctx.scale(DPR,DPR);
-  ctx.clearRect(0,0,W,H);
-  const days=30; const dayCost=new Array(days).fill(0);
-  rows.forEach(({it})=>{ const c=calc(it).cost/days; for(let d=0; d<days; d++){ const jitter=1+(Math.sin((d+iHash(it.name))*1.3)*0.07); dayCost[d]+=c*jitter; } });
-  const maxY=Math.max(...dayCost,1); const pad=36;
+  const pad=36, maxY=Math.max(...data,100)||100;
+  // axes
   ctx.strokeStyle="#233043"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(pad,H-pad); ctx.lineTo(W-pad,H-pad); ctx.lineTo(W-pad,pad); ctx.stroke();
-  ctx.strokeStyle="#7cffc2"; ctx.lineWidth=2; ctx.beginPath();
-  for(let d=0; d<days; d++){ const x=pad+(W-2*pad)*d/(days-1); const y=H-pad-(H-2*pad)*(dayCost[d]/maxY); if(d===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
-  ctx.stroke();
-  ctx.fillStyle="#9fb3c8"; ctx.font="12px system-ui";
-  for(let t=0;t<=4;t++){ const v=(maxY*t/4); const y=H-pad-(H-2*pad)*t/4; ctx.fillText("¥"+Math.round(v).toLocaleString("ja-JP"),6,y+4); ctx.strokeStyle="#233043"; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-pad,y); ctx.stroke(); }
-  for(let d=1; d<=days; d+=5){ const x=pad+(W-2*pad)*(d-1)/(days-1); ctx.fillText(d+"日", x-8, H-pad+16); }
+  // bars
+  const n=7, bw=(W-2*pad)/n*0.6, gap=(W-2*pad)/n*0.4;
+  data.forEach((v,i)=>{
+    const x = pad + i*((W-2*pad)/n) + gap/2;
+    const h = (H-2*pad)*(v/maxY);
+    ctx.fillStyle = `hsl(${(i*48)%360} 80% 55%)`;
+    ctx.fillRect(x, H-pad-h, bw, h);
+    ctx.fillStyle = "#9fb3c8"; ctx.font="12px system-ui"; ctx.fillText(["月","火","水","木","金","土","日"][i], x+bw/4, H-pad+16);
+  });
+  // y ticks
+  ctx.fillStyle="#9fb3c8";
+  for(let t=0;t<=4;t++){ const y=H-pad-(H-2*pad)*t/4; const val=Math.round(maxY*t/4); ctx.fillText("¥"+val.toLocaleString("ja-JP"),6,y+4); ctx.strokeStyle="#233043"; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-pad,y); ctx.stroke(); }
 }
-function iHash(str){ let h=0; for(let i=0;i<str.length;i++){ h=(h*31 + str.charCodeAt(i))>>>0; } return h%100; }
+function drawBarCompare(){
+  const thisCost = sum(getWeekRecords(currentWeekStart),"yen");
+  const lastCost = sum(getWeekRecords(addDays(currentWeekStart,-7)),"yen");
+  const nextCost = forecastNextWeekCost(currentWeekStart);
+  const labels=["先週","今週","来週(予測)"]; const data=[lastCost,thisCost,nextCost].map(v=>Math.round(v));
+  const canvas=document.getElementById("barCompare"), ctx=canvas.getContext("2d");
+  const DPR=window.devicePixelRatio||1, W=canvas.clientWidth, H=canvas.clientHeight; canvas.width=W*DPR; canvas.height=H*DPR; ctx.scale(DPR,DPR);
+  ctx.clearRect(0,0,W,H);
+  const pad=40, maxY=Math.max(...data,100)||100, n=3, bw=(W-2*pad)/n*0.5, gap=(W-2*pad)/n*0.5;
+  // axis
+  ctx.strokeStyle="#233043"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(pad,H-pad); ctx.lineTo(W-pad,H-pad); ctx.lineTo(W-pad,pad); ctx.stroke();
+  data.forEach((v,i)=>{
+    const x = pad + i*((W-2*pad)/n) + gap/2;
+    const h = (H-2*pad)*(v/maxY);
+    ctx.fillStyle = ["#7aa2ff","#7cffc2","#ffd36e"][i];
+    ctx.fillRect(x, H-pad-h, bw, h);
+    ctx.fillStyle="#e8f0ff"; ctx.font="12px system-ui"; ctx.fillText(labels[i], x, H-pad+16);
+    ctx.fillText("¥"+v.toLocaleString("ja-JP"), x, H-pad-h-6);
+  });
+  ctx.fillStyle="#9fb3c8";
+  for(let t=0;t<=4;t++){ const y=H-pad-(H-2*pad)*t/4; const val=Math.round(maxY*t/4); ctx.fillText("¥"+val.toLocaleString("ja-JP"),6,y+4); ctx.strokeStyle="#233043"; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-pad,y); ctx.stroke(); }
+}
 
-// ====== Export/Import/Clear ======
-document.getElementById("export").addEventListener("click",()=>{
-  const blob=new Blob([JSON.stringify({items,defaultTariff,dailyLimitYen},null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="denkidai_data_v21.json"; a.click(); URL.revokeObjectURL(url);
+// ---------- Export / Import ----------
+document.getElementById("exportData").addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify({records,myDevices},null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="denkidai_weekly_v3.json"; a.click(); URL.revokeObjectURL(url);
 });
-document.getElementById("file").addEventListener("change",(e)=>{
+document.getElementById("importFile").addEventListener("change",(e)=>{
   const f=e.target.files[0]; if(!f) return; const r=new FileReader();
-  r.onload=()=>{ try{ const d=JSON.parse(r.result); items=d.items||[]; defaultTariff=d.defaultTariff||defaultTariff; dailyLimitYen=d.dailyLimitYen||0; document.getElementById("tariff").value=defaultTariff; document.getElementById("dailyLimitYen").value=dailyLimitYen||""; save(); render(); syncPush(); }catch(err){ alert("読み込みに失敗しました"); } };
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(d.records) records=d.records; if(d.myDevices) {myDevices=d.myDevices; saveMyDevices(myDevices);} saveRecords(records); renderPreset(); redraw(); }catch(err){ alert("読み込みに失敗しました"); } };
   r.readAsText(f);
 });
-document.getElementById("clear").addEventListener("click",()=>{ if(confirm("データをすべて削除しますか？")){ items=[]; localStorage.removeItem(storeKey); render(); syncPush(); } });
 
-// ====== 通知 ======
-function updateNotifStatus(){ const s=Notification?.permission; document.getElementById("notifStatus").textContent = s==="granted"?"許可済":(s==="denied"?"拒否":"未許可"); }
-document.getElementById("notifBtn").addEventListener("click", async ()=>{
-  if(!("Notification" in window)) return alert("このブラウザは通知に対応していません。");
-  try{ const perm=await Notification.requestPermission(); updateNotifStatus(); if(perm==="granted"){ new Notification("通知が有効になりました",{body:"今日の使用をチェックしてみよう！"}); } }catch(e){ alert("通知の許可に失敗しました"); }
-});
-document.getElementById("checkToday").addEventListener("click", ()=>{
-  const limit=parseFloat(document.getElementById("dailyLimitYen").value||"0"); dailyLimitYen=limit; save();
-  const approx=getApproxDailyYen();
-  if(limit>0 && approx>limit){ if(Notification.permission==="granted"){ new Notification("使いすぎ注意！",{body:`本日の推定: ${yen(approx)} ／ しきい値: ${yen(limit)}`}); } alert(`使いすぎ注意！ 本日の推定: ${yen(approx)} ／ しきい値: ${yen(limit)}`); }
-  else{ alert(`本日の推定: ${yen(approx)}（しきい値: ${limit>0?yen(limit):"未設定"}）`); }
-});
-function getApproxDailyYen(){ const total = items.reduce((s,it)=> s + calc(it).cost, 0); return total/30; }
-
-// ====== 光シミュ ======
-function updateLightSim(totalYen){
-  const boost=parseFloat(document.getElementById("lightBoost").value||"1");
-  document.getElementById("boostLabel").textContent = boost+"x";
-  const after = totalYen/Math.max(1,boost);
-  document.getElementById("yenLight").textContent = yen(after);
-  document.getElementById("yenSaved").textContent = "-"+yen(totalYen-after);
+// ---------- 画面更新 ----------
+function redraw(){
+  setWeekLabel();
+  renderKpi();
+  renderWeekTable();
+  drawBarWeek();
+  drawBarCompare();
 }
-document.getElementById("lightBoost").addEventListener("input", ()=>{
-  const totalYen = items.reduce((s,it)=> s + calc(it).cost, 0); updateLightSim(totalYen);
-});
-
-// ====== Firebase 共有（任意） ======
-let cloud = { on:false, shareId:"", config:null, app:null, db:null, unsub:null };
-async function syncInit(){
-  const cfgText=document.getElementById("firebaseConfig").value.trim();
-  const shareId=document.getElementById("shareId").value.trim();
-  if(!cfgText || !shareId){ alert("Firebase設定と共有IDを入力してください。"); return false; }
-  try{ cloud.config=JSON.parse(cfgText);}catch(e){ alert("Firebase設定がJSONとして読み取れません。"); return false; }
-  const srcs=[
-    "https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js",
-    "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"
-  ];
-  for(const src of srcs){
-    await new Promise((res,rej)=>{ const s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=()=>rej(new Error("script load failed: "+src)); document.head.appendChild(s); });
-  }
-  try{ cloud.app=firebase.initializeApp(cloud.config); cloud.db=firebase.firestore(); cloud.shareId=shareId; return true; }catch(e){ alert("Firebase初期化失敗: "+e.message); return false; }
-}
-async function syncToggle(){
-  if(cloud.on){ if(cloud.unsub){ cloud.unsub(); cloud.unsub=null; } cloud.on=false; document.getElementById("toggleSync").textContent="同期: OFF"; alert("同期を停止しました。"); return; }
-  const ok=await syncInit(); if(!ok) return;
-  const docRef=cloud.db.collection("denkidai").doc(cloud.shareId);
-  cloud.unsub = docRef.onSnapshot((snap)=>{
-    const d=snap.data();
-    if(d && d.items){ items=d.items; defaultTariff=d.defaultTariff||defaultTariff; dailyLimitYen=d.dailyLimitYen||0;
-      document.getElementById("tariff").value=defaultTariff; document.getElementById("dailyLimitYen").value=dailyLimitYen||""; save(); render(); }
-  });
-  await docRef.set({items,defaultTariff,dailyLimitYen,ts:Date.now()});
-  cloud.on=true; document.getElementById("toggleSync").textContent="同期: ON"; alert("同期を開始しました。家族も同じ共有IDを入れれば同じデータが見えます。");
-}
-async function syncPush(){ if(!cloud.on||!cloud.db) return; const docRef=cloud.db.collection("denkidai").doc(cloud.shareId); await docRef.set({items,defaultTariff,dailyLimitYen,ts:Date.now()}); }
-document.getElementById("toggleSync").addEventListener("click", syncToggle);
-
-// ====== 初期化 ======
-function loadAndMaybeSeed(){
-  load();
-  if(items.length===0){
-    items=[
-      {name:"エアコン（冷房）", watt:600, hours:6, days:30, standbyW:3, category:"冷暖房", tariff: defaultTariff},
-      {name:"ゲーミングPC", watt:400, hours:4, days:25, standbyW:2, category:"娯楽・ゲーム", tariff: defaultTariff},
-      {name:"冷蔵庫", watt:150, hours:8, days:30, standbyW:5, category:"キッチン", tariff: defaultTariff},
-      {name:"照明（LED×3）", watt:30, hours:5, days:30, standbyW:0, category:"照明", tariff: defaultTariff}
+// ---------- 初期化 ----------
+(function init(){
+  // 入力フォームの初期日付→今日
+  document.getElementById("date").value = fmtDate(new Date());
+  document.getElementById("jumpDate").value = fmtDate(new Date());
+  renderPreset();
+  // デモ（初回のみ）
+  if(records.length===0){
+    const today = new Date();
+    const seed = [
+      {name:"エアコン（冷房）",watt:600,hours:5,tariff:31,category:"冷暖房",offset:-1},
+      {name:"ゲーミングPC",watt:500,hours:3,tariff:31,category:"娯楽・ゲーム",offset:-2},
+      {name:"冷蔵庫",watt:150,hours:8,tariff:31,category:"キッチン",offset:-3},
+      {name:"照明",watt:30,hours:5,tariff:31,category:"照明",offset:0},
     ];
+    seed.forEach(s=>{
+      const d = fmtDate(addDays(today,s.offset));
+      const kwh=(s.watt*s.hours)/1000, yen=kwh*s.tariff;
+      records.push({id:cryptoRandom(), date:d, name:s.name, watt:s.watt, hours:s.hours, tariff:s.tariff, kwh, yen, category:s.category});
+    });
+    saveRecords(records);
   }
-}
-function init(){ renderPresetSelect(); loadAndMaybeSeed(); render(); updateNotifStatus(); }
-init();
+  redraw();
+})();
+function cryptoRandom(){ return Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,9); }
 </script>
 </body>
 </html>
