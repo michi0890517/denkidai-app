@@ -1,6 +1,6 @@
 {
-  "name": "電気代アプリ v3（週次トラッカー）",
-  "short_name": "電気代v3",
+  "name": "電気代アプリ v3.2（週次）",
+  "short_name": "電気代v3.2",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0b0f14",
