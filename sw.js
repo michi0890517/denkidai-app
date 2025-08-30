@@ -1,4 +1,4 @@
-const CACHE = 'denkidai-v3-cache-v1';
+const CACHE = 'denkidai-v32-cache-v1';
 const ASSETS = [
   './',
   './index.html',
