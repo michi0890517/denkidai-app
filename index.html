@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>電気代アプリ v3.2（週次トラッカー／エクスポート＆同期）</title>
+<title>電気代アプリ v4（通知/CO₂/時間帯料金/OCR/バッジ）</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <meta name="theme-color" content="#0b0f14" />
 <style>
@@ -13,7 +13,7 @@ header{position:sticky;top:0;z-index:10;padding:16px;border-bottom:1px solid var
 h1{margin:0;font-size:clamp(18px,3.2vw,28px)} .sub{color:var(--muted);font-size:12px}
 main{max-width:1200px;margin:0 auto;padding:16px} .grid{display:grid;gap:14px;grid-template-columns:1fr} @media(min-width:1100px){.grid{grid-template-columns:1.2fr 1fr}}
 .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid var(--border);border-radius:14px;padding:14px}
-.row{display:flex;gap:10px;flex-wrap:wrap} label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end} label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
 input,select,button,textarea{background:#0e1520;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;outline:none}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(90,209,255,.12)}
 button{cursor:pointer;border:1px solid transparent;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#001018;font-weight:700}
@@ -25,15 +25,18 @@ table{width:100%;border-collapse:collapse;font-size:14px} th,td{border-bottom:1p
 .flex-between{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 canvas{width:100%;height:320px;background:#0e1520;border:1px solid var(--border);border-radius:12px;display:block}
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border)}
+.stamps{display:flex;gap:6px;flex-wrap:wrap}
+.stamp{width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--border);border-radius:6px;background:#0e1520;font-size:12px}
+.ok{background:var(--ok);color:#001010}
 @media (max-width: 640px){ input,select,button,textarea{font-size:16px} .row{gap:8px} .card{padding:12px}}
 summary{cursor:pointer}
-textarea{width:min(680px,100%);min-height:100px}
+hr{border:0;border-top:1px dashed var(--border);margin:8px 0}
 </style>
 </head>
 <body>
 <header>
-  <h1>電気代アプリ v3.2 <span class="badge">週次</span> <span class="badge">エクスポート＆同期</span> <span class="badge">PWA</span></h1>
-  <div class="sub">スマホ最適化・オフラインOK。CSV/JSONエクスポート & Firebaseで家族/PCと同期。</div>
+  <h1>電気代アプリ v4 <span class="badge">通知</span> <span class="badge">CO₂</span> <span class="badge">時間帯料金</span> <span class="badge">OCR</span> <span class="badge">バッジ</span></h1>
+  <div class="sub">PWA対応（オフラインOK）。21時リマインド / 使いすぎ通知 / CO₂換算 / 時間帯料金 / 請求書OCR / スタンプ＆称号。</div>
 </header>
 
 <main class="grid">
@@ -41,14 +44,13 @@ textarea{width:min(680px,100%);min-height:100px}
   <!-- 入力 -->
   <section class="card">
     <div class="flex-between">
-      <h2 style="margin:0">① クイック記録（プリセット & 上書き可）</h2>
-      <span class="small">式: (W × 時間) ÷ 1000 = kWh、kWh × 単価 = 円</span>
+      <h2 style="margin:0">① クイック記録</h2>
+      <div class="row">
+        <button class="secondary" id="copyYesterday">昨日と同じ</button>
+        <button class="secondary" id="dupLast">直近の記録を複製</button>
+      </div>
     </div>
     <div class="row">
-      <div>
-        <label>家電プリセット</label>
-        <select id="preset"></select>
-      </div>
       <div>
         <label>家電名</label>
         <input id="name" placeholder="例: エアコン（冷房）">
@@ -62,12 +64,12 @@ textarea{width:min(680px,100%);min-height:100px}
         <input id="hours" type="number" inputmode="decimal" placeholder="1.5">
       </div>
       <div>
-        <label>単価 (円/kWh)</label>
-        <input id="tariff" type="number" value="31">
-      </div>
-      <div>
         <label>日付</label>
         <input id="date" type="date">
+      </div>
+      <div>
+        <label>開始時刻</label>
+        <input id="time" type="time" value="19:00">
       </div>
       <div>
         <label>カテゴリー</label>
@@ -76,18 +78,32 @@ textarea{width:min(680px,100%);min-height:100px}
           <option>情報家電</option><option>娯楽・ゲーム</option><option>その他</option>
         </select>
       </div>
+      <div>
+        <label>CO₂係数 (kg/kWh)</label>
+        <input id="co2Factor" type="number" step="0.01" value="0.50">
+      </div>
     </div>
-    <div class="row" style="margin-top:6px">
-      <button id="addRecord">この内容で記録</button>
-      <button class="secondary" id="saveMyDevice">↑ をマイ家電に保存</button>
-      <button class="secondary" id="clearMyDevice">マイ家電全消去</button>
+    <div class="row">
+      <button id="addRecord">この内容で記録（時間帯料金で単価自動）</button>
     </div>
   </section>
 
-  <!-- 週ビュー&KPI -->
+  <!-- 時間帯料金 -->
+  <section class="card">
+    <h2 style="margin:0">② 時間帯料金（TOU）</h2>
+    <div class="small">時間帯ごとに単価（円/kWh）を設定。入力の開始時刻で自動適用。</div>
+    <div class="row">
+      <div><label>昼(07-22)</label><input id="rateDay" type="number" value="31"></div>
+      <div><label>夜(22-24)</label><input id="rateNight" type="number" value="24"></div>
+      <div><label>深夜(00-07)</label><input id="rateLate" type="number" value="22"></div>
+      <button class="secondary" id="saveTOU">保存</button>
+    </div>
+  </section>
+
+  <!-- KPI -->
   <section class="card">
     <div class="flex-between">
-      <h2 style="margin:0">② 週ビュー（先週/今週/来週）</h2>
+      <h2 style="margin:0">③ 今週の状況</h2>
       <div class="row">
         <button class="secondary" id="prevWeek">＜ 先週</button>
         <button class="secondary" id="thisWeek">今週</button>
@@ -95,180 +111,184 @@ textarea{width:min(680px,100%);min-height:100px}
         <input id="jumpDate" type="date" title="この日を含む週へジャンプ">
       </div>
     </div>
-    <div class="flex-between" style="margin-top:8px">
-      <div><span class="tag">週範囲</span> <strong id="weekLabel">—</strong></div>
-      <div class="small">週の開始は<strong>月曜</strong>基準</div>
-    </div>
+    <div><span class="tag">週範囲</span> <strong id="weekLabel">—</strong></div>
     <div class="kpi" style="margin-top:10px">
       <div class="box"><div class="small">今週 合計kWh</div><div class="num" id="kpiKwh">0.00</div></div>
       <div class="box"><div class="small">今週 電気代</div><div class="num" id="kpiYen">¥0</div></div>
+      <div class="box"><div class="small">今週 CO₂</div><div class="num" id="kpiCO2">0.00 kg</div></div>
       <div class="box"><div class="small">先週比</div><div class="num" id="kpiWoW">—</div></div>
-      <div class="box"><div class="small">来週予測</div><div class="num" id="kpiNext">¥0</div></div>
     </div>
   </section>
 
   <!-- 日別明細 -->
   <section class="card" style="grid-column:1/-1">
-    <h2 style="margin:0 0 6px">③ 日別明細（今表示中の週）</h2>
+    <h2 style="margin:0 0 6px">④ 日別明細（今表示中の週）</h2>
     <table id="weekTable">
-      <thead><tr><th>日付</th><th>kWh</th><th>電気代</th><th>内訳</th></tr></thead>
+      <thead><tr><th>日付</th><th>kWh</th><th>電気代</th><th>CO₂(kg)</th><th>内訳</th></tr></thead>
       <tbody></tbody>
     </table>
   </section>
 
   <!-- グラフ -->
   <section class="card">
-    <h2 style="margin:0 0 6px">④ 日別コスト（今週）</h2>
+    <h2 style="margin:0 0 6px">⑤ 日別コスト（今週）</h2>
     <canvas id="barWeek"></canvas>
   </section>
-  <section class="card">
-    <h2 style="margin:0 0 6px">⑤ 先週/今週/来週（予測）</h2>
-    <canvas id="barCompare"></canvas>
-    <div class="small">来週は直近2週の平均×季節係数（任意：1.00）で予測</div>
-    <div class="row" style="margin-top:6px">
-      <div>
-        <label>季節係数（冷暖房期など）</label>
-        <input id="seasonCoef" type="number" step="0.05" value="1.00">
-      </div>
-      <button class="secondary" id="recalcForecast" style="align-self:flex-end">予測を再計算</button>
-    </div>
-  </section>
 
-  <!-- エクスポート＆バックアップ -->
+  <!-- 通知 -->
   <section class="card">
-    <h2 style="margin:0 0 6px">⑥ エクスポート / バックアップ</h2>
+    <h2 style="margin:0 0 6px">⑥ 通知設定</h2>
     <div class="row">
-      <button class="secondary" id="exportJSON">JSON書き出し（全データ）</button>
-      <button class="secondary" id="exportCSV">CSV書き出し（レコード）</button>
-      <button class="secondary" id="exportWeeklyCSV">CSV（週ごと集計）</button>
-      <label for="importFile" class="secondary" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;width:auto;padding:10px 12px;border-radius:10px;border:1px solid var(--border)">
-        <input type="file" id="importFile" accept=".json,.csv" style="display:none">取り込み（JSON/CSV）
-      </label>
-      <button class="secondary" id="clearAll">全データ削除</button>
+      <div><label>使いすぎアラート（今日）</label><input id="limitYen" type="number" value="500"></div>
+      <div><label>リマインド時刻</label><input id="remindAt" type="time" value="21:00"></div>
+      <button class="secondary" id="enableNoti">通知ON</button>
     </div>
-    <div class="small">CSVはExcel/スプレッドシートに貼れる。JSONは完全バックアップ。</div>
+    <div class="small">※Web Pushなしのローカル通知。アプリ起動中に有効（PWAでホーム画面運用推奨）。</div>
   </section>
 
-  <!-- クラウド同期（Firebase Firestore） -->
+  <!-- OCR 取り込み -->
   <section class="card">
-    <h2 style="margin:0 0 6px">⑦ クラウド同期（任意 / Firebase）</h2>
-    <div class="small">構成JSONと共有IDを入れて「同期ON」。家族・PCと同じデータが見える。</div>
-    <textarea id="firebaseConfig" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea>
-    <div class="row" style="margin-top:8px">
-      <div>
-        <label>共有ID（例：rasu-family-01）</label>
-        <input id="shareId" placeholder="共有ID">
-      </div>
-      <div class="row" style="align-items:flex-end">
-        <button class="secondary" id="toggleSync">同期: OFF</button>
-        <span class="tag" id="syncStatus">未初期化</span>
-      </div>
+    <h2 style="margin:0 0 6px">⑦ 請求書OCR取り込み（β）</h2>
+    <div class="row">
+      <input type="file" id="ocrFile" accept="image/*" />
+      <button class="secondary" id="runOCR">OCRで読み取り</button>
     </div>
-    <div class="small">※ 認証は匿名ログイン。Firestoreのルールは各自の環境に合わせて設定してね。</div>
+    <div id="ocrOut" class="small" style="margin-top:8px;color:#cfe4ff"></div>
+  </section>
+
+  <!-- バッジ & スタンプ -->
+  <section class="card">
+    <h2 style="margin:0 0 6px">⑧ スタンプ & バッジ</h2>
+    <div class="small">毎日入力でスタンプ。3/7/14日連続で称号が増える。</div>
+    <div class="stamps" id="stamps"></div>
+    <hr>
+    <div id="badges" class="small"></div>
   </section>
 
 </main>
 
+<!-- Tesseract.js (OCR) CDN -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
 <script>
 /* ===== ユーティリティ ===== */
 const fmtDate = d => d.toISOString().slice(0,10);
-const fromYmd = s => { const [y,m,dd]=s.split('-').map(Number); return new Date(y,m-1,dd); };
+const fromYmd = s => { if(!s) return new Date(); const [y,m,dd]=s.split('-').map(Number); return new Date(y,m-1,dd); };
 const startOfWeekMon = d => { const nd=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=(nd.getDay()+6)%7; nd.setDate(nd.getDate()-day); return nd; };
 const addDays = (d,n)=>{ const x=new Date(d); x.setDate(x.getDate()+n); return x; };
 const range7 = start => Array.from({length:7},(_,i)=> addDays(start,i));
-const STORE_KEY="rasu_v3_records", DEV_KEY="rasu_v3_my_devices";
+const sum = (list,key)=> list.reduce((s,x)=> s + (x[key]||0), 0);
+const escHTML = s => (s||"").toString().replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;","&gt;":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+
+/* ===== ストレージ ===== */
+const STORE_KEY="rasu_v4_records";
+const TOU_KEY="rasu_v4_tou";
+const CFG_KEY="rasu_v4_cfg";
+const BADGE_KEY="rasu_v4_badges";
 const load = (k,def)=>{ try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(def));}catch(_){return def;} };
 const save = (k,v)=> localStorage.setItem(k, JSON.stringify(v));
-const sum = (list,key)=> list.reduce((s,x)=> s + (x[key]||0), 0);
-const escapeHtml = s => (s||"").toString().replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;","&gt;":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 
-/* ===== データ ===== */
-let records = load(STORE_KEY, []); // {id,date,name,watt,hours,tariff,kwh,yen,category}
-let myDevices = load(DEV_KEY, []);
+/* ===== データ構造 =====
+record: {id,date,time,name,watt,hours,kwh,yen,co2,category,rate}
+TOU設定: {day:31, night:24, late:22}
+設定: {co2Factor:0.5, limitYen:500, remindAt:"21:00", lastNotiDate:"YYYY-MM-DD"}
+バッジ: {streak: n, days: ["YYYY-MM-DD", ...], earned: ["3days","7days",...]}
+*/
+let records = load(STORE_KEY, []);
+let TOU = load(TOU_KEY, {day:31, night:24, late:22});
+let CFG = load(CFG_KEY, {co2Factor:0.5, limitYen:500, remindAt:"21:00", lastNotiDate:null});
+let BADGE = load(BADGE_KEY, {streak:0, days:[], earned:[]});
 
-/* ===== プリセット ===== */
-const defaultPresets=[
-  {name:"エアコン（冷房）",watt:600,category:"冷暖房"},
-  {name:"エアコン（暖房）",watt:900,category:"冷暖房"},
-  {name:"冷蔵庫",watt:150,category:"キッチン"},
-  {name:"テレビ",watt:100,category:"情報家電"},
-  {name:"ゲーミングPC（平均）",watt:400,category:"娯楽・ゲーム"},
-  {name:"ドライヤー",watt:1000,category:"その他"}
-];
-function renderPreset(){
-  const sel=document.getElementById('preset'); sel.innerHTML="";
-  sel.appendChild(new Option("（プリセットを選択）",""));
-  const og1=document.createElement('optgroup'); og1.label="標準プリセット";
-  defaultPresets.forEach(p=> og1.appendChild(new Option(`${p.name} / ${p.watt}W`, JSON.stringify(p))));
-  sel.appendChild(og1);
-  const og2=document.createElement('optgroup'); og2.label="マイ家電（保存済み）";
-  myDevices.forEach(p=> og2.appendChild(new Option(`${p.name} / ${p.watt}W`, JSON.stringify(p))));
-  sel.appendChild(og2);
+/* ===== UI 初期値 ===== */
+document.getElementById('date').value = fmtDate(new Date());
+document.getElementById('jumpDate').value = fmtDate(new Date());
+document.getElementById('rateDay').value = TOU.day;
+document.getElementById('rateNight').value = TOU.night;
+document.getElementById('rateLate').value = TOU.late;
+document.getElementById('co2Factor').value = CFG.co2Factor;
+document.getElementById('limitYen').value = CFG.limitYen;
+document.getElementById('remindAt').value = CFG.remindAt;
+
+/* ===== 時間帯単価 ===== */
+function getRateByTime(hhmm){
+  const [h,m] = (hhmm||"00:00").split(":").map(Number);
+  const H = (h + (m>=30?0:0)); // ざっくり時単位
+  if(H>=7 && H<22) return TOU.day;
+  if(H>=22 && H<=23) return TOU.night;
+  return TOU.late; // 0-6
 }
-document.addEventListener('change', e=>{
-  if(e.target.id==='preset' && e.target.value){
-    try{ const p=JSON.parse(e.target.value);
-      document.getElementById('name').value=p.name;
-      document.getElementById('watt').value=p.watt;
-      document.getElementById('category').value=p.category||"その他";
-    }catch(_){}
-  }
-});
-document.getElementById('saveMyDevice').addEventListener('click', ()=>{
-  const name=document.getElementById('name').value.trim();
-  const watt=parseFloat(document.getElementById('watt').value);
-  const category=document.getElementById('category').value||"その他";
-  if(!name||!isFinite(watt)) return alert("家電名とW数を入力してください");
-  myDevices.push({name,watt,category}); save(DEV_KEY,myDevices); renderPreset(); alert("マイ家電に保存しました！");
-});
-document.getElementById('clearMyDevice').addEventListener('click', ()=>{
-  if(confirm("保存したマイ家電をすべて削除しますか？")){
-    myDevices=[]; save(DEV_KEY,myDevices); renderPreset();
-  }
+document.getElementById('saveTOU').addEventListener('click', ()=>{
+  TOU.day = +document.getElementById('rateDay').value||TOU.day;
+  TOU.night = +document.getElementById('rateNight').value||TOU.night;
+  TOU.late = +document.getElementById('rateLate').value||TOU.late;
+  CFG.co2Factor = +document.getElementById('co2Factor').value || CFG.co2Factor;
+  save(TOU_KEY, TOU); save(CFG_KEY, CFG);
+  alert('時間帯料金とCO₂係数を保存しました');
 });
 
 /* ===== 記録追加 ===== */
+function addRecord(rec){
+  records.push(rec); save(STORE_KEY, records);
+  updateStreak(rec.date); // スタンプ＆バッジ更新
+  redraw(); checkOveruseNotify();
+}
 document.getElementById('addRecord').addEventListener('click', ()=>{
   const name=(document.getElementById('name').value||"未設定").trim();
   const watt=parseFloat(document.getElementById('watt').value);
   const hours=parseFloat(document.getElementById('hours').value);
-  const tariff=parseFloat(document.getElementById('tariff').value);
-  let date=document.getElementById('date').value; if(!date){ date=fmtDate(new Date()); document.getElementById('date').value=date; }
+  const date=document.getElementById('date').value || fmtDate(new Date());
+  const time=document.getElementById('time').value || "19:00";
   const category=document.getElementById('category').value||"その他";
-  if([watt,hours,tariff].some(v=>!isFinite(v))) return alert("数値を正しく入力してください");
-  const kwh=(watt*hours)/1000, yen=kwh*tariff;
+  CFG.co2Factor = +document.getElementById('co2Factor').value || CFG.co2Factor; save(CFG_KEY, CFG);
+  if([watt,hours].some(v=>!isFinite(v))) return alert("W数と時間を正しく入力してください");
+  const kwh=(watt*hours)/1000;
+  const rate = getRateByTime(time);
+  const yen = kwh*rate;
+  const co2 = kwh*CFG.co2Factor;
   const id=Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8);
-  records.push({id,date,name,watt,hours,tariff,kwh,yen,category}); save(STORE_KEY,records); redraw(); syncPush();
+  addRecord({id,date,time,name,watt,hours,kwh,yen,co2,category,rate});
+});
+
+/* ===== ショートカット ===== */
+document.getElementById('copyYesterday').addEventListener('click', ()=>{
+  const ymd = fmtDate(addDays(new Date(), -1));
+  const list = records.filter(r=> r.date===ymd);
+  if(!list.length) return alert("昨日の記録がありません");
+  list.forEach(r=>{
+    const c = {...r, id: Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8), date: fmtDate(new Date())};
+    addRecord(c);
+  });
+});
+document.getElementById('dupLast').addEventListener('click', ()=>{
+  const last = records[records.length-1];
+  if(!last) return alert("まだ記録がありません");
+  const c = {...last, id: Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8), date: fmtDate(new Date())};
+  addRecord(c);
 });
 
 /* ===== 週ビュー ===== */
 let currentWeekStart=startOfWeekMon(new Date());
+function getWeekRecords(start){ const d=range7(start).map(fmtDate); return records.filter(r=> d.includes(r.date)); }
+function setWeekLabel(){ const a=currentWeekStart, b=addDays(a,6); document.getElementById('weekLabel').textContent=`${fmtDate(a)} 〜 ${fmtDate(b)}`; }
 document.getElementById('prevWeek').addEventListener('click',()=>{ currentWeekStart=addDays(currentWeekStart,-7); redraw(); });
 document.getElementById('thisWeek').addEventListener('click',()=>{ currentWeekStart=startOfWeekMon(new Date()); redraw(); });
 document.getElementById('nextWeek').addEventListener('click',()=>{ currentWeekStart=addDays(currentWeekStart,7); redraw(); });
-document.getElementById('jumpDate').addEventListener('change',e=>{ const d=fromYmd(e.target.value); if(!isFinite(d)) return; currentWeekStart=startOfWeekMon(d); redraw(); });
+document.getElementById('jumpDate').addEventListener('change',e=>{ const d=fromYmd(e.target.value); currentWeekStart=startOfWeekMon(d); redraw(); });
 
-/* ===== KPI / 集計 ===== */
-function getWeekRecords(start){ const days=range7(start).map(fmtDate); return records.filter(r=> days.includes(r.date)); }
-function setWeekLabel(){ const a=currentWeekStart, b=addDays(a,6); document.getElementById('weekLabel').textContent=`${fmtDate(a)} 〜 ${fmtDate(b)}`; }
+/* ===== KPI ===== */
 function woW(thisCost,lastCost){
   if(lastCost<=0) return "—";
   const delta=thisCost-lastCost, pct=(delta/lastCost)*100;
   const sign=delta>0?"+":""; return `${sign}${Math.round(pct)}%（${sign}¥${Math.round(delta).toLocaleString("ja-JP")}）`;
 }
-function forecastNext(start){
-  const last=getWeekRecords(addDays(start,-7)), prev=getWeekRecords(addDays(start,-14));
-  const base=((sum(last,"yen")+sum(prev,"yen"))/2) || sum(last,"yen") || sum(getWeekRecords(start),"yen");
-  const coef=parseFloat(document.getElementById('seasonCoef').value||"1.0")||1.0;
-  return base*coef;
-}
 function renderKpi(){
   const thisW=getWeekRecords(currentWeekStart), lastW=getWeekRecords(addDays(currentWeekStart,-7));
-  const kwhThis=sum(thisW,"kwh"), yenThis=sum(thisW,"yen"), yenLast=sum(lastW,"yen");
+  const kwhThis=sum(thisW,"kwh"), yenThis=sum(thisW,"yen"), co2This=sum(thisW,"co2");
+  const yenLast=sum(lastW,"yen");
   document.getElementById('kpiKwh').textContent=kwhThis.toFixed(2);
   document.getElementById('kpiYen').textContent="¥"+Math.round(yenThis).toLocaleString("ja-JP");
+  document.getElementById('kpiCO2').textContent=co2This.toFixed(2)+" kg";
   document.getElementById('kpiWoW').textContent=woW(yenThis,yenLast);
-  document.getElementById('kpiNext').textContent="¥"+Math.round(forecastNext(currentWeekStart)).toLocaleString("ja-JP");
 }
 
 /* ===== テーブル ===== */
@@ -276,28 +296,38 @@ function renderWeekTable(){
   const tbody=document.querySelector('#weekTable tbody'); tbody.innerHTML="";
   range7(currentWeekStart).forEach(d=>{
     const ymd=fmtDate(d); const list=records.filter(r=> r.date===ymd);
-    const kwh=sum(list,"kwh"), yen=sum(list,"yen");
-    const details=document.createElement('details'); const sumry=document.createElement('summary'); sumry.textContent=list.length?`${list.length} 件の内訳`:"—"; details.appendChild(sumry);
+    const kwh=sum(list,"kwh"), yen=sum(list,"yen"), co2=sum(list,"co2");
+    const details=document.createElement('details'); const sumry=document.createElement('summary');
+    sumry.textContent=list.length?`${list.length} 件の内訳`:"—"; details.appendChild(sumry);
     if(list.length){
       const ul=document.createElement('ul'); ul.className='small';
-      list.forEach(x=>{ const li=document.createElement('li'); li.innerHTML=`${escapeHtml(x.name)} / ${x.watt}W×${x.hours}h = ${x.kwh.toFixed(2)}kWh / ¥${Math.round(x.yen).toLocaleString("ja-JP")} <button class="secondary" data-edit="${x.id}">編集</button> <button class="secondary" data-del="${x.id}">削除</button>`; ul.appendChild(li); });
+      list.forEach(x=>{
+        const li=document.createElement('li');
+        li.innerHTML=`${escHTML(x.name)} / ${x.watt}W×${x.hours}h @¥${x.rate}/kWh = ${x.kwh.toFixed(2)}kWh / ¥${Math.round(x.yen).toLocaleString("ja-JP")} / CO₂ ${x.co2.toFixed(2)}kg 
+        <button class="secondary" data-edit="${x.id}">編集</button> <button class="secondary" data-del="${x.id}">削除</button>`;
+        ul.appendChild(li);
+      });
       details.appendChild(ul);
     }
-    const tr=document.createElement('tr'); tr.innerHTML=`<td>${ymd}</td><td>${kwh.toFixed(2)}</td><td>¥${Math.round(yen).toLocaleString("ja-JP")}</td><td></td>`; tr.children[3].appendChild(details); tbody.appendChild(tr);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${ymd}</td><td>${kwh.toFixed(2)}</td><td>¥${Math.round(yen).toLocaleString("ja-JP")}</td><td>${co2.toFixed(2)}</td><td></td>`;
+    tr.children[4].appendChild(details); tbody.appendChild(tr);
   });
 }
 document.addEventListener('click', e=>{
   const d=e.target.dataset;
-  if(d.del){ records=records.filter(r=> r.id!==d.del); save(STORE_KEY,records); redraw(); syncPush(); }
-  if(d.edit){ const rec=records.find(r=> r.id===d.edit); if(!rec) return;
+  if(d.del){ records=records.filter(r=> r.id!==d.del); save(STORE_KEY,records); redraw(); }
+  if(d.edit){
+    const rec=records.find(r=> r.id===d.edit); if(!rec) return;
     const name=prompt("家電名",rec.name)??rec.name;
     const watt=+prompt("消費電力(W)",rec.watt)||rec.watt;
     const hours=+prompt("使用時間(h)",rec.hours)||rec.hours;
-    const tariff=+prompt("単価(円/kWh)",rec.tariff)||rec.tariff;
+    const rate=+prompt("単価(円/kWh)",rec.rate)||rec.rate;
     const date=prompt("日付(YYYY-MM-DD)",rec.date)??rec.date;
+    const time=prompt("開始時刻(HH:MM)",rec.time)??rec.time;
     const category=prompt("カテゴリー",rec.category||"その他")??(rec.category||"その他");
-    const kwh=(watt*hours)/1000, yen=kwh*tariff;
-    Object.assign(rec,{name,watt,hours,tariff,date,category,kwh,yen}); save(STORE_KEY,records); redraw(); syncPush();
+    const kwh=(watt*hours)/1000; const yen=kwh*rate; const co2=kwh*CFG.co2Factor;
+    Object.assign(rec,{name,watt,hours,rate,date,time,category,kwh,yen,co2}); save(STORE_KEY,records); redraw();
   }
 });
 
@@ -319,186 +349,142 @@ function drawBarWeek(){
   ctx.fillStyle="#9fb3c8";
   for(let t=0;t<=4;t++){ const y=H-pad-(H-2*pad)*t/4; const val=Math.round(maxY*t/4); ctx.fillText("¥"+val.toLocaleString("ja-JP"),6,y+4); ctx.strokeStyle="#233043"; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-pad,y); ctx.stroke(); }
 }
-function drawBarCompare(){
-  const thisCost=sum(getWeekRecords(currentWeekStart),"yen");
-  const lastCost=sum(getWeekRecords(addDays(currentWeekStart,-7)),"yen");
-  const nextCost=forecastNext(currentWeekStart);
-  const labels=["先週","今週","来週(予測)"]; const data=[lastCost,thisCost,nextCost].map(v=>Math.round(v));
-  const canvas=document.getElementById('barCompare'), ctx=canvas.getContext('2d');
-  const DPR=window.devicePixelRatio||1, W=canvas.clientWidth, H=canvas.clientHeight; canvas.width=W*DPR; canvas.height=H*DPR; ctx.scale(DPR,DPR);
-  ctx.clearRect(0,0,W,H);
-  const pad=40, maxY=Math.max(...data,100)||100, n=3, bw=(W-2*pad)/n*0.5, gap=(W-2*pad)/n*0.5;
-  ctx.strokeStyle="#233043"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(pad,H-pad); ctx.lineTo(W-pad,H-pad); ctx.lineTo(W-pad,pad); ctx.stroke();
-  data.forEach((v,i)=>{
-    const x=pad + i*((W-2*pad)/n) + gap/2, h=(H-2*pad)*(v/maxY);
-    ctx.fillStyle=["#7aa2ff","#7cffc2","#ffd36e"][i]; ctx.fillRect(x,H-pad-h,bw,h);
-    ctx.fillStyle="#e8f0ff"; ctx.font="12px system-ui"; ctx.fillText(labels[i], x, H-pad+16);
-    ctx.fillText("¥"+v.toLocaleString("ja-JP"), x, H-pad-h-6);
-  });
-  ctx.fillStyle="#9fb3c8";
-  for(let t=0;t<=4;t++){ const y=H-pad-(H-2*pad)*t/4; const val=Math.round(maxY*t/4); ctx.fillText("¥"+val.toLocaleString("ja-JP"),6,y+4); ctx.strokeStyle="#233043"; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-pad,y); ctx.stroke(); }
+
+/* ===== 通知（ローカル） ===== */
+async function requestNoti(){
+  if(!("Notification" in window)) return alert("通知に未対応のブラウザです");
+  const p = await Notification.requestPermission();
+  if(p!=="granted") alert("通知が許可されていません");
 }
-
-/* ===== エクスポート ===== */
-function toCSV(rows){
-  const esc = v => `"${String(v??"").replace(/"/g,'""')}"`;
-  return rows.map(r=> Object.values(r).map(esc).join(",")).join("\n");
-}
-document.getElementById('exportJSON').addEventListener('click', ()=>{
-  const blob=new Blob([JSON.stringify({records,myDevices},null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download="denkidai_v32_backup.json"; a.click(); URL.revokeObjectURL(url);
+document.getElementById('enableNoti').addEventListener('click', async ()=>{
+  CFG.limitYen = +document.getElementById('limitYen').value || CFG.limitYen;
+  CFG.remindAt = document.getElementById('remindAt').value || CFG.remindAt;
+  save(CFG_KEY, CFG);
+  await requestNoti();
+  scheduleReminderTick();
+  alert("通知を有効化しました（このタブ/アプリが開いている間に動作します）");
 });
-document.getElementById('exportCSV').addEventListener('click', ()=>{
-  const header=["id","date","name","watt","hours","tariff","kwh","yen","category"];
-  const rows=[header].concat(records.map(r=> header.map(k=> r[k])));
-  const blob=new Blob([toCSV(rows)],{type:"text/csv;charset=utf-8"});
-  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download="denkidai_v32_records.csv"; a.click(); URL.revokeObjectURL(url);
-});
-document.getElementById('exportWeeklyCSV').addEventListener('click', ()=>{
-  // 週ごとに合計（ISO週ではなく「月曜開始の7日」）
-  const map = new Map(); // key: weekStart(YYYY-MM-DD) -> {kwh, yen}
-  records.forEach(r=>{
-    const ws = startOfWeekMon(fromYmd(r.date));
-    const key = fmtDate(ws);
-    const cur = map.get(key) || {kwh:0,yen:0};
-    cur.kwh += r.kwh||0; cur.yen += r.yen||0; map.set(key, cur);
-  });
-  const header=["week_start","week_end","kwh","yen"];
-  const rows=[header];
-  [...map.entries()].sort((a,b)=> a[0].localeCompare(b[0])).forEach(([ws,v])=>{
-    const we = fmtDate(addDays(fromYmd(ws),6));
-    rows.push([ws,we, v.kwh.toFixed(2), Math.round(v.yen)]);
-  });
-  const blob=new Blob([toCSV(rows)],{type:"text/csv;charset=utf-8"});
-  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download="denkidai_v32_weekly.csv"; a.click(); URL.revokeObjectURL(url);
-});
-
-/* ===== インポート（JSON/CSV） ===== */
-document.getElementById('importFile').addEventListener('change', e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const isCSV = /\.csv$/i.test(f.name);
-  const r=new FileReader();
-  r.onload=()=>{
-    try{
-      if(isCSV){
-        // ヘッダ付きrecords.csv想定
-        const lines = r.result.split(/\r?\n/).filter(Boolean);
-        const header = lines.shift().split(",").map(s=> s.replace(/^"|"$/g,"").replace(/""/g,'"'));
-        const idx = k => header.indexOf(k);
-        lines.forEach(line=>{
-          const cells = line.match(/("([^"]|"")*"|[^,]+)/g).map(s=> s.replace(/^"|"$/g,"").replace(/""/g,'"'));
-          const obj = {
-            id: cells[idx("id")] || Date.now().toString(36),
-            date: cells[idx("date")],
-            name: cells[idx("name")],
-            watt: +cells[idx("watt")]||0,
-            hours: +cells[idx("hours")]||0,
-            tariff: +cells[idx("tariff")]||0,
-            kwh: +cells[idx("kwh")]||0,
-            yen: +cells[idx("yen")]||0,
-            category: cells[idx("category")]||"その他"
-          };
-          if(obj.date) records.push(obj);
-        });
-      }else{
-        const d=JSON.parse(r.result);
-        if(d.records) records=d.records;
-        if(d.myDevices){ myDevices=d.myDevices; save(DEV_KEY,myDevices); }
-      }
-      save(STORE_KEY,records); renderPreset(); redraw(); syncPush();
-      alert("取り込み完了！");
-    }catch(err){ console.error(err); alert("取り込みに失敗しました"); }
-  };
-  r.readAsText(f);
-});
-
-/* ===== 全消去 ===== */
-document.getElementById('clearAll').addEventListener('click', ()=>{
-  if(!confirm("全データ（記録・マイ家電）を削除します。よろしいですか？")) return;
-  records=[]; myDevices=[]; save(STORE_KEY,records); save(DEV_KEY,myDevices); renderPreset(); redraw(); syncPush();
-});
-
-/* ===== Firebase 同期（任意） ===== */
-let cloud = { on:false, shareId:"", config:null, app:null, db:null, unsub:null, uid:null };
-async function loadFirebaseScripts(){
-  const srcs=[
-    "https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js",
-    "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js",
-    "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"
-  ];
-  for(const src of srcs){
-    await new Promise((res,rej)=>{ const s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=()=>rej(new Error("script load failed: "+src)); document.head.appendChild(s); });
+function notify(title, body){ try{ new Notification(title, {body}); }catch(_){ console.log(title, body); } }
+function checkOveruseNotify(){
+  const today = fmtDate(new Date());
+  const spent = sum(records.filter(r=> r.date===today), "yen");
+  if(spent >= CFG.limitYen){
+    const key = "over_"+today+"_"+CFG.limitYen;
+    if(sessionStorage.getItem(key)) return; // 同日同閾値で1回だけ
+    notify("使いすぎアラート", `今日の合計が¥${Math.round(spent)}を超えました（閾値¥${CFG.limitYen}）`);
+    sessionStorage.setItem(key,"1");
   }
 }
-function setSyncStatus(text){ document.getElementById("syncStatus").textContent=text; }
-async function syncInit(){
-  const cfgText=document.getElementById("firebaseConfig").value.trim();
-  const shareId=document.getElementById("shareId").value.trim();
-  if(!cfgText || !shareId){ alert("Firebase設定と共有IDを入力してください。"); return false; }
-  try{ cloud.config=JSON.parse(cfgText);}catch(e){ alert("Firebase設定がJSONとして読み取れません。"); return false; }
-  try{
-    await loadFirebaseScripts();
-    cloud.app=firebase.initializeApp(cloud.config);
-    await firebase.auth().signInAnonymously().then(res=> cloud.uid=res.user.uid);
-    cloud.db=firebase.firestore();
-    cloud.shareId=shareId;
-    return true;
-  }catch(e){ alert("Firebase初期化失敗: "+e.message); return false; }
+function scheduleReminderTick(){
+  // 1分ごとに現在時刻を見て、指定時刻±1分なら通知（重複防止あり）
+  if(window.__remindTimer) clearInterval(window.__remindTimer);
+  window.__remindTimer = setInterval(()=>{
+    const [hh,mm] = (CFG.remindAt||"21:00").split(":").map(Number);
+    const now = new Date(); const today=fmtDate(now);
+    if(CFG.lastNotiDate===today) return;
+    if(now.getHours()===hh && Math.abs(now.getMinutes()-mm)<=1){
+      notify("今日の入力リマインド","今日の電気代、つけ忘れてない？");
+      CFG.lastNotiDate=today; save(CFG_KEY, CFG);
+    }
+  }, 60*1000);
 }
-async function syncToggle(){
-  if(cloud.on){
-    if(cloud.unsub){ cloud.unsub(); cloud.unsub=null; }
-    cloud.on=false; document.getElementById("toggleSync").textContent="同期: OFF"; setSyncStatus("停止");
-    return;
-  }
-  const ok=await syncInit(); if(!ok) return;
-  const docRef=cloud.db.collection("denkidai").doc(cloud.shareId);
-  cloud.unsub = docRef.onSnapshot((snap)=>{
-    const d=snap.data();
-    if(d && Array.isArray(d.records)){ records=d.records; save(STORE_KEY,records); renderPreset(); redraw(); setSyncStatus("受信中"); }
-  }, err=> setSyncStatus("エラー: "+err.message));
-  await docRef.set({records, myDevices, ts: Date.now(), uid: cloud.uid}, {merge:true});
-  cloud.on=true; document.getElementById("toggleSync").textContent="同期: ON"; setSyncStatus("接続中");
-}
-async function syncPush(){
-  if(!cloud.on || !cloud.db) return;
-  try{
-    const docRef=cloud.db.collection("denkidai").doc(cloud.shareId);
-    await docRef.set({records, myDevices, ts: Date.now(), uid: cloud.uid || null}, {merge:true});
-    setSyncStatus("送受信OK");
-  }catch(e){ setSyncStatus("送信失敗"); }
-}
-document.getElementById("toggleSync").addEventListener("click", syncToggle);
 
-/* ===== 再計算・描画 ===== */
-document.getElementById('recalcForecast').addEventListener('click', redraw);
+/* ===== OCR ===== */
+document.getElementById('runOCR').addEventListener('click', async ()=>{
+  const file = document.getElementById('ocrFile').files?.[0];
+  if(!file) return alert("画像を選択してください");
+  document.getElementById('ocrOut').textContent = "読み取り中…";
+  try{
+    const { data:{ text } } = await Tesseract.recognize(file, 'jpn+eng', { logger: m=>{} });
+    document.getElementById('ocrOut').textContent = "OCR結果: \n"+text.slice(0,1000);
+    // 簡易抽出: 日付 / kWh / 円
+    const dateMatch = text.match(/(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+    const kwhMatch = text.match(/([\d\.]+)\s*kWh/i);
+    const yenMatch = text.match(/¥\s*([\d,]+)/) || text.match(/合計\s*([\d,]+)\s*円/);
+    const date = dateMatch ? `${dateMatch[1]}-${String(dateMatch[2]).padStart(2,'0')}-${String(dateMatch[3]).padStart(2,'0')}` : fmtDate(new Date());
+    const kwh = kwhMatch ? parseFloat(kwhMatch[1]) : null;
+    const yen = yenMatch ? parseInt(yenMatch[1].replace(/,/g,''),10) : null;
+    if(kwh||yen){
+      const rate = (kwh && yen) ? (yen/kwh) : getRateByTime("19:00");
+      const co2 = (kwh||0) * CFG.co2Factor;
+      addRecord({id:cryptoId(), date, time:"19:00", name:"請求書OCR", watt:0, hours:0, kwh:kwh||0, yen: yen||((kwh||0)*rate), co2, category:"その他", rate});
+      alert("OCRから1件登録しました（必要なら編集で調整）");
+    }else{
+      alert("金額やkWhが読み取れませんでした。結果を確認して手入力してください。");
+    }
+  }catch(e){
+    console.error(e); alert("OCRに失敗しました");
+    document.getElementById('ocrOut').textContent = "読み取りに失敗";
+  }
+});
+function cryptoId(){ return Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8); }
+
+/* ===== スタンプ & バッジ ===== */
+function updateStreak(dateStr){
+  // 一度でもその日に記録があればスタンプ付与
+  const dset = new Set(BADGE.days);
+  if(!dset.has(dateStr)){ BADGE.days.push(dateStr); }
+  BADGE.days.sort();
+  // 直近から連続日数を計算
+  let streak=0; let ptr = new Date();
+  for(;;){
+    const ymd = fmtDate(ptr);
+    if(BADGE.days.includes(ymd)){ streak++; ptr=addDays(ptr,-1); }
+    else break;
+  }
+  BADGE.streak = streak;
+  // バッジ付与
+  const earned = new Set(BADGE.earned);
+  if(streak>=3) earned.add("3日連続"); 
+  if(streak>=7) earned.add("7日連続"); 
+  if(streak>=14) earned.add("14日連続");
+  BADGE.earned = [...earned];
+  save(BADGE_KEY, BADGE);
+  renderBadges();
+}
+function renderBadges(){
+  // スタンプ（直近14日）
+  const box=document.getElementById('stamps'); box.innerHTML="";
+  for(let i=13;i>=0;i--){
+    const ymd=fmtDate(addDays(new Date(), -i));
+    const div=document.createElement('div');
+    div.className="stamp"+(BADGE.days.includes(ymd)?" ok":"");
+    div.textContent = new Date(ymd).getDate();
+    box.appendChild(div);
+  }
+  // バッジ一覧
+  const bd=document.getElementById('badges');
+  bd.innerHTML = "称号: " + (BADGE.earned.length? BADGE.earned.join(" / ") : "なし") + `　現在連続: ${BADGE.streak}日`;
+}
+
+/* ===== 再描画 ===== */
 function redraw(){
-  document.getElementById('date').value ||= fmtDate(new Date());
-  document.getElementById('jumpDate').value = fmtDate(new Date());
-  setWeekLabel(); renderKpi(); renderWeekTable(); drawBarWeek(); drawBarCompare();
+  setWeekLabel(); renderKpi(); renderWeekTable(); drawBarWeek(); renderBadges();
 }
 
-/* ===== 初期化（デモ投入） ===== */
+/* ===== 初期デモ投入（初回のみ） ===== */
 (function init(){
-  document.getElementById('date').value = fmtDate(new Date());
-  document.getElementById('jumpDate').value = fmtDate(new Date());
-  renderPreset();
   if(records.length===0){
     const today=new Date();
     const seed=[
-      {name:"エアコン（冷房）",watt:600,hours:5,tariff:31,category:"冷暖房",offset:-1},
-      {name:"ゲーミングPC",watt:500,hours:3,tariff:31,category:"娯楽・ゲーム",offset:-2},
-      {name:"冷蔵庫",watt:150,hours:8,tariff:31,category:"キッチン",offset:-3},
-      {name:"照明",watt:30,hours:5,tariff:31,category:"照明",offset:0}
+      {name:"エアコン（冷房）",watt:600,hours:5,rate:TOU.day,offset:-1},
+      {name:"ゲーミングPC",watt:500,hours:3,rate:TOU.day,offset:-2},
+      {name:"冷蔵庫",watt:150,hours:8,rate:TOU.late,offset:-3},
+      {name:"照明",watt:30,hours:5,rate:TOU.night,offset:0},
     ];
-    seed.forEach(s=>{ const d=fmtDate(addDays(today,s.offset)); const kwh=(s.watt*s.hours)/1000, yen=kwh*s.tariff;
-      records.push({id:Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8),date:d,name:s.name,watt:s.watt,hours:s.hours,tariff:s.tariff,kwh,yen,category:s.category}); });
-    save(STORE_KEY,records);
+    seed.forEach(s=>{
+      const d=fmtDate(addDays(today,s.offset));
+      const kwh=(s.watt*s.hours)/1000, yen=kwh*s.rate, co2=kwh*CFG.co2Factor;
+      records.push({id:cryptoId(), date:d, time:"19:00", name:s.name, watt:s.watt, hours:s.hours, kwh, yen, co2, category:"その他", rate:s.rate});
+      BADGE.days.push(d);
+    });
+    save(STORE_KEY,records); save(BADGE_KEY,BADGE);
   }
+  scheduleReminderTick();
   redraw();
 })();
 
-/* ===== PWA: Service Worker ===== */
+/* ===== PWA SW 登録（既存の sw.js を使用） ===== */
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=> {
     navigator.serviceWorker.register('./sw.js').catch(console.error);
